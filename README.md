@@ -8,7 +8,7 @@ Testing Arduino Core: Additional URL https://github.com/stm32duino/BoardManagerF
 
 ## Known issues and steps to make it work
 
-* Copy `misc/boards.local.txt' to the folder, where STM32duino Core is installed (eg. `/home/pavkriz/.arduino15/packages/STM32/hardware/stm32/1.3.0/`)
+* Copy `misc/boards.local.txt` to the folder, where STM32duino Core is installed (eg. `/home/pavkriz/.arduino15/packages/STM32/hardware/stm32/1.3.0/`)
 * Fix hardcoded `arduinoPath` path in `.vscode/c_cpp_properties.json` file
 * Fix hardcoded `cortex-debug.openocdPath` path in `.vscode/settings.json` file
 * Fix hardcoded `cortex-debug.armToolchainPath` path in `.vscode/settings.json` file
