@@ -6,7 +6,7 @@
     "configurations": [
         {
             "cwd": "${workspaceRoot}",
-            "executable": "./build/sketch_maple_mini_test.ino.elf",
+            "executable": "./build/knxduino.ino.elf",
             "name": "Debug Microcontroller",
             "request": "launch",
             "type": "cortex-debug",
