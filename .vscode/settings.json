@@ -1,0 +1,15 @@
+{
+    "cortex-debug.openocdPath": "/home/pavkriz/.platformio/packages/tool-openocd/bin/openocd",
+    "cortex-debug.armToolchainPath": "/home/pavkriz/.platformio/packages/toolchain-gccarmnoneeabi/bin/",
+    "files.associations": {
+        "thread": "c",
+        "array": "cpp",
+        "bitset": "cpp",
+        "rope": "cpp",
+        "slist": "cpp",
+        "initializer_list": "cpp",
+        "utility": "cpp",
+        "valarray": "cpp",
+        "*.tcc": "cpp"
+    }
+}
