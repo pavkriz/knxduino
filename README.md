@@ -6,13 +6,18 @@ Testing IDE: [Visual Studio Code](https://code.visualstudio.com/) + [Arduino plu
 
 Testing Arduino Core: Additional URL https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json version 1.3.0
 
-## Known issues
+## Known issues and steps to make it work
 
+* Copy `misc/boards.local.txt' to the folder, where STM32duino Core is installed (eg. `/home/pavkriz/.arduino15/packages/STM32/hardware/stm32/1.3.0/`)
 * Fix hardcoded `arduinoPath` path in `.vscode/c_cpp_properties.json` file
 * Fix hardcoded `cortex-debug.openocdPath` path in `.vscode/settings.json` file
 * Fix hardcoded `cortex-debug.armToolchainPath` path in `.vscode/settings.json` file
 * Fix hardcoded path to `stm32f3discovery.cfg` in `.vscode/launch.json` file
 * `Arduino: Upload` command does not work because of `output` option in `.vscode/arduino.json` file. Use `Arduino: Verify` followed by `Debug: Continue (F5)` instead.
+
+## TODO
+
+* Migrate to PlatformIO.org when it will fully support official ST's STM32duino Core (which we use here). PlatformIO.org has much better build and dependency management (configurable preprocessor defines, local references to particular Arduino Core, libraries,...). Watch https://github.com/platformio/platform-ststm32/issues/76
 
 ## Acknowledgement
 

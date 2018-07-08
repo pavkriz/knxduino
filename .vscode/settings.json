@@ -1,6 +1,8 @@
 {
     "cortex-debug.openocdPath": "/home/pavkriz/.platformio/packages/tool-openocd/bin/openocd",
     "cortex-debug.armToolchainPath": "/home/pavkriz/.platformio/packages/toolchain-gccarmnoneeabi/bin/",
+    "C_Cpp.intelliSenseEngine": "Default",
+    "arduino.logLevel": "info",
     "files.associations": {
         "thread": "c",
         "array": "cpp",
@@ -10,6 +12,12 @@
         "initializer_list": "cpp",
         "utility": "cpp",
         "valarray": "cpp",
-        "*.tcc": "cpp"
+        "*.tcc": "cpp",
+        "deque": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp"
     }
 }
