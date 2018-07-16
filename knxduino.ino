@@ -53,17 +53,26 @@ static void MX_COMP4_Init(void)
   }
 }
 
+void HAL_MspInit(void) {
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
+}
+
 void setup() {
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   pinMode(LED_PIN, OUTPUT);
   Serial.begin(115200);
-  analogWrite(KNX_RX_TRESHOLD_DAC_PIN, 0);
+  analogWrite(KNX_RX_TRESHOLD_DAC_PIN, 1.4*255/3.3);
   MX_COMP4_Init(); // KNX RX comparator
+  HAL_COMP_Start(&hcomp4);
 }
 
 void loop() {
-  digitalWrite(PA5, HIGH);
-  delay(100);
-  digitalWrite(PA5, LOW);
-  delay(100);    
-  Serial.println("Hi there!");
+  //digitalWrite(PA5, HIGH);
+  //delay(100);
+  //digitalWrite(PA5, LOW);
+  //delay(100);    
+  Serial.println("===");
+  Serial.println(HAL_COMP_GetState(&hcomp4));
+  Serial.println(HAL_COMP_GetOutputLevel(&hcomp4));
 }

@@ -18,6 +18,8 @@
         "list": "cpp",
         "unordered_map": "cpp",
         "unordered_set": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "stm32_def.h": "c",
+        "hw_config.h": "c"
     }
 }
