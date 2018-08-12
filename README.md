@@ -1,6 +1,14 @@
 # KNXduino - KNX bus compatible DIY device based on STM32F303 MCU with Arduino flavour
 
-Testing HW: [Nucleo-F303RE](https://www.st.com/en/evaluation-tools/nucleo-f303re.html)
+## Testing Board
+
+* [Nucleo-F303RE](https://www.st.com/en/evaluation-tools/nucleo-f303re.html)
+* Connections:
+    * KNX RX voltage divider 33k:2k -> PB0 (COMP4_INP)
+    * PB1 (COMP4_OUT) -> PA6 (TIM3_CH1)
+    * KNX- <-> GND
+
+
 
 Testing IDE: [Visual Studio Code](https://code.visualstudio.com/) + [Arduino plugin](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino) + [Cortex-Debug plugin](https://marketplace.visualstudio.com/items?itemName=marus25.cortex-debug)
 

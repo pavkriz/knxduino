@@ -2,6 +2,7 @@
     "cortex-debug.openocdPath": "/home/pavkriz/.platformio/packages/tool-openocd/bin/openocd",
     "cortex-debug.armToolchainPath": "/home/pavkriz/.platformio/packages/toolchain-gccarmnoneeabi/bin/",
     "C_Cpp.intelliSenseEngine": "Default",
+    "C_Cpp.clang_format_fallbackStyle": "WebKit",
     "arduino.logLevel": "info",
     "files.associations": {
         "thread": "c",
@@ -20,6 +21,7 @@
         "unordered_set": "cpp",
         "vector": "cpp",
         "stm32_def.h": "c",
-        "hw_config.h": "c"
+        "hw_config.h": "c",
+        "functional": "cpp"
     }
 }

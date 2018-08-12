@@ -10,7 +10,6 @@
                 "STM32F303xE",
                 "HAL_UART_MODULE_ENABLED",
                 "HAL_COMP_MODULE_ENABLED"
-
             ],
             "includePath": [
                 "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/cores/arduino",
@@ -18,7 +17,8 @@
                 "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/system/Drivers/STM32F3xx_HAL_Driver/Inc",
                 "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/system/Drivers/CMSIS/Device/ST/STM32F3xx/Include",
                 "${arduinoPath}/packages/STM32/tools/CMSIS/5.3.0/CMSIS/Core/Include",
-                "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/variants/NUCLEO_F303RE"
+                "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/variants/NUCLEO_F303RE",
+                "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/system/Drivers/STM32F3xx_HAL_Driver/Inc/Legacy"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": false,
@@ -29,7 +29,7 @@
                     "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/system/Drivers/CMSIS/Device/ST/STM32F3xx/Include",
                     "${arduinoPath}/packages/STM32/tools/CMSIS/5.3.0/CMSIS/Core/Include",
                     "${arduinoPath}/packages/STM32/hardware/stm32/1.3.0/variants/NUCLEO_F303RE"
-                    ]
+                ]
             },
             "intelliSenseMode": "clang-x64",
             "compilerPath": "/usr/bin/clang",
