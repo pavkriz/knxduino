@@ -141,28 +141,11 @@ inline void BusHal::begin()
         _Error_Handler(__FILE__, __LINE__);
     }
 
-    sConfigOC.OCMode = TIM_OCMODE_ACTIVE;
-    sConfigOC.Pulse = 0;
-    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-    if (HAL_TIM_OC_ConfigChannel(htim, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-    {
-        _Error_Handler(__FILE__, __LINE__);
-    }
-
-    //sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-    //sConfigIC.ICSelection = TIM_ICSELECTION_INDIRECTTI;
-    //sConfigIC.ICFilter = 0;
-    //if (HAL_TIM_IC_ConfigChannel(&htim3, &sConfigIC, TIM_CHANNEL_4) != HAL_OK) {
-    //    _Error_Handler(__FILE__, __LINE__);
-    //}
-
     if (HAL_TIM_Base_Start(htim) != HAL_OK) {
         _Error_Handler(__FILE__, __LINE__);
     }
 
     HAL_TIM_IC_Start_IT(htim, TIM_CHANNEL_1);
-    HAL_TIM_IC_Start_IT(htim, TIM_CHANNEL_2);
 
 }
 
