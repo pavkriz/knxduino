@@ -1,5 +1,7 @@
 # KNXduino - KNX bus compatible DIY device based on STM32F303 MCU with Arduino flavour
 
+* This project is based on [Selfbus project](http://www.selfbus.org)
+
 ## Testing Board
 
 * [Nucleo-F303RE](https://www.st.com/en/evaluation-tools/nucleo-f303re.html)
