@@ -38,12 +38,13 @@ void setup() {
   Serial.begin(115200);
   analogWrite(KNX_RX_TRESHOLD_DAC_PIN, 1.4*255/3.3);
   Serial.println("Start");
+
+  delay(1000);
   
   // Arduino interfacing for UPDATE event callback that is already handled by Arduino STM32 core,
   // beware, may interfere with libraries using STM32 hardware timers (PWM, Servo, SoftSerial,...)
   attachIntHandle(&busHal._timer, isrArduinoTimerUpdateCallback);
 
-  busHal.begin();
   bus.begin();
 }
 
