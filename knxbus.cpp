@@ -8,10 +8,10 @@
  * May lead to duplicate definition in case it will
  * be implemented in STM32duino Core in future.
  */
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
-{
-    (KnxBus::getInstance())->isrCallback(htim);
-}
+//void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
+//{
+//    (KnxBus::getInstance())->isrCallback(htim);
+//}
 
 KnxBus::KnxBus()
 {

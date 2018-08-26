@@ -8,14 +8,14 @@
  *  published by the Free Software Foundation.
  */
 
-#include <sblib/eib/bus.h>
+#include "bus.h"
 
-#include <sblib/core.h>
-#include <sblib/interrupt.h>
-#include <sblib/platform.h>
-#include <sblib/eib/addr_tables.h>
-#include <sblib/eib/user_memory.h>
-#include <sblib/eib/properties.h>
+//#include <sblib/core.h>
+//#include <sblib/interrupt.h>
+//#include <sblib/platform.h>
+#include "addr_tables.h"
+#include "user_memory.h"
+#include "properties.h"
 
 /*
  * The timer16_1 is used as follows:
@@ -35,12 +35,6 @@
 #define SB_TEL_REPEAT_FLAG 0x20
 
 static int debugLine = 0;
-
-// Mask for the timer flag of the capture channel
-#define CAPTURE_FLAG (8 << captureChannel)
-
-// Mask for the timer flag of the time channel
-#define TIME_FLAG (8 << timeChannel)
 
 // Default time between two bits (104 usec)
 #define BIT_TIME 104
@@ -71,14 +65,9 @@ unsigned char telBuffer[32];
 unsigned int telLength = 0;
 #endif
 
-Bus::Bus(Timer& aTimer, int aRxPin, int aTxPin, TimerCapture aCaptureChannel, TimerMatch aPwmChannel)
-:timer(aTimer)
-,rxPin(aRxPin)
-,txPin(aTxPin)
-,captureChannel(aCaptureChannel)
-,pwmChannel(aPwmChannel)
+Bus::Bus(BusHal& aBusHal)
+:busHal(aBusHal)
 {
-    timeChannel = (TimerMatch) ((pwmChannel + 2) & 3);  // +2 to be compatible to old code during refactoring
     state = Bus::IDLE;
 }
 
@@ -101,23 +90,7 @@ void Bus::begin()
     sendTriesMax = 4;
     collision = false;
 
-    timer.begin();
-    timer.pwmEnable(pwmChannel);
-    timer.captureMode(captureChannel, FALLING_EDGE | INTERRUPT);
-    timer.start();
-    timer.interrupts();
-    timer.prescaler(TIMER_PRESCALER);
-
-    timer.match(timeChannel, 0xfffe);
-    timer.matchMode(timeChannel, RESET);
-    timer.match(pwmChannel, 0xffff);
-
-    // wait until output is driven low before enabling output pin.
-    // Using digitalWrite(txPin, 0) does not work with MAT channels.
-    timer.value(0xffff); // trigger the next event immediately
-    while (timer.getMatchChannelLevel(pwmChannel) == true);
-    pinMode(txPin, OUTPUT_MATCH);   // Configure bus output
-    pinMode(rxPin, INPUT_CAPTURE | HYSTERESIS);  // Configure bus input
+    busHal.begin();
 
     //
     // Init GPIOs for debugging
@@ -145,11 +118,7 @@ void Bus::begin()
 
 void Bus::idleState()
 {
-    timer.captureMode(captureChannel, FALLING_EDGE | INTERRUPT);
-
-    timer.matchMode(timeChannel, RESET);
-    timer.match(timeChannel, 0xfffe);
-    timer.match(pwmChannel, 0xffff);
+    busHal.idleState();
 
     state = Bus::IDLE;
     sendAck = 0;
@@ -161,6 +130,13 @@ void Bus::idleState()
 void Bus::handleTelegram(bool valid)
 {
 //    D(digitalWrite(PIO1_4, 1));         // purple: end of telegram
+    Serial.println("RCV:");
+    for (int i = 0; i < nextByteIndex; ++i) {
+        Serial.print(telegram[i]);
+        Serial.print(" ");
+    }
+    Serial.println();
+
     sendAck = 0;
 
     if (collision) // A collision occurred. Ignore the received bytes
@@ -213,10 +189,7 @@ void Bus::handleTelegram(bool valid)
     // Wait before sending. In SEND_INIT we will cancel if there is nothing to be sent.
     // We need to wait anyways to avoid triggering sending from the application code when
     // the bus is in cooldown. This could happen if we set state to Bus::IDLE here.
-    timer.match(timeChannel, sendAck ? SEND_ACK_WAIT_TIME - PRE_SEND_TIME : SEND_WAIT_TIME - PRE_SEND_TIME);
-    timer.matchMode(timeChannel, INTERRUPT | RESET);
-
-    timer.captureMode(captureChannel, FALLING_EDGE | INTERRUPT);
+    busHal.waitBeforeSending();
 
     collision = false;
     state = Bus::SEND_INIT;
@@ -252,7 +225,7 @@ STATE_SWITCH:
     {
     // The bus is idle. Usually we come here when there is a capture event on bus-in.
     case Bus::IDLE:
-        if (!timer.flag(captureChannel)) // Not a bus-in signal: do nothing
+        if (!busHal.isCaptureChannelFlag()) // Not a bus-in signal: do nothing
             break;
         nextByteIndex = 0;
         collision = false;
@@ -265,15 +238,13 @@ STATE_SWITCH:
     // transmission is over.
     case Bus::RECV_START:
         //D(digitalWrite(PIO3_1, 1));   // orange
-        if (!timer.flag(captureChannel))  // No start bit: then it is a timeout
+        if (!busHal.isCaptureChannelFlag())  // No start bit: then it is a timeout
         {
             handleTelegram(valid && !checksum);
             break;
         }
 
-        timer.match(timeChannel, BYTE_TIME);
-        timer.restart();
-        timer.matchMode(timeChannel, INTERRUPT | RESET);
+        busHal.setupTimeChannel(BYTE_TIME);
 
         state = Bus::RECV_BYTE;
         currentByte = 0;
@@ -283,10 +254,10 @@ STATE_SWITCH:
         break;
 
     case Bus::RECV_BYTE:
-        timeout = timer.flag(timeChannel);
+        timeout = busHal.isTimeChannelFlag();
 
         if (timeout) time = BYTE_TIME;
-        else time = timer.capture(captureChannel);
+        else time = busHal.getCaptureValue();
 
         if (time >= bitTime + BIT_WAIT_TIME)
         {
@@ -316,7 +287,7 @@ STATE_SWITCH:
             }
 
             state = Bus::RECV_START;   // wait for the next byte's start bit
-            timer.match(timeChannel, BIT_TIME * 4);
+            busHal.setTimeMatch(BIT_TIME * 4);
         }
         break;
 
@@ -325,7 +296,7 @@ STATE_SWITCH:
     case Bus::SEND_INIT:
         D(digitalWrite(PIO1_5, 1)); // yellow: prepare transmission
 
-        if (timer.flag(captureChannel))  // Bus input, enter receive mode
+        if (busHal.isCaptureChannelFlag())  // Bus input, enter receive mode
         {
             state = Bus::IDLE;
             goto STATE_SWITCH;
@@ -364,11 +335,8 @@ STATE_SWITCH:
             }
         }
 
-        timer.match(pwmChannel, time);
-        timer.match(timeChannel, time + BIT_PULSE_TIME);
-        timer.matchMode(timeChannel, RESET | INTERRUPT);
-        timer.captureMode(captureChannel, FALLING_EDGE | INTERRUPT);
-
+        busHal.setupStartBit(time, time + BIT_PULSE_TIME);
+        
         nextByteIndex = 0;
         state = Bus::SEND_START_BIT;
         break;
@@ -378,13 +346,13 @@ STATE_SWITCH:
     // sending before us, or if a timeout occurred. In case of a timeout, we have a hardware
     // problem as receiving our sent signal does not work.
     case Bus::SEND_START_BIT:
-        if (timer.flag(captureChannel))
+        if (busHal.isCaptureChannelFlag())
         {
             // Abort sending if we receive a start bit early enough to abort.
             // We will receive our own start bit here too.
-            if (timer.value() < timer.match(pwmChannel) - 10)
+            if (busHal.getTimerValue() < busHal.getPwmMatch() - 10)
             {
-                timer.match(pwmChannel, 0xffff);
+                busHal.setPwmMatch(0xffff);
                 state = Bus::RECV_START;
                 goto STATE_SWITCH;
             }
@@ -392,7 +360,7 @@ STATE_SWITCH:
             state = Bus::SEND_BIT_0;
             break;
         }
-        else if (timer.flag(timeChannel))
+        else if (busHal.isTimeChannelFlag())
         {
             // Timeout: we have a hardware problem as receiving our sent signal does not work.
             // for now we will just continue
@@ -447,24 +415,24 @@ STATE_SWITCH:
         }
 
         if (state == Bus::SEND_BIT_WAIT)
-            timer.captureMode(captureChannel, FALLING_EDGE | INTERRUPT);
-        else timer.captureMode(captureChannel, FALLING_EDGE);
+            busHal.setupCaptureWithInterrupt();
+        else busHal.setupCaptureWithoutInterrupt();
 
         if (state == Bus::SEND_END)
-            timer.match(pwmChannel, 0xffff);
-        else timer.match(pwmChannel, time - BIT_PULSE_TIME);
+            busHal.setPwmMatch(0xffff);
+        else busHal.setPwmMatch(time - BIT_PULSE_TIME);
 
-        timer.match(timeChannel, time);
+        busHal.setTimeMatch(time);
         break;
 
     // Wait for a capture event from bus-in. This should be from us sending a zero bit, but it
     // might as well be from somebody else in case of a collision.
     case Bus::SEND_BIT_WAIT:
-        if (timer.capture(captureChannel) < timer.match(pwmChannel) - BIT_WAIT_TIME)
+        if (busHal.getCaptureValue() < busHal.getPwmMatch() - BIT_WAIT_TIME)
         {
             // A collision. Stop sending and ignore the current transmission.
             D(digitalWrite(PIO1_4, 1));  // purple
-            timer.match(pwmChannel, 0xffff);
+            busHal.setPwmMatch(0xffff);
             state = Bus::RECV_BYTE;
             collision = true;
             break;
@@ -474,8 +442,8 @@ STATE_SWITCH:
 
     case Bus::SEND_END:
         //D(digitalWrite(PIO2_9, 1));
-        timer.match(timeChannel, SEND_WAIT_TIME);
-        timer.captureMode(captureChannel, FALLING_EDGE | INTERRUPT);
+        busHal.setTimeMatch(SEND_WAIT_TIME);
+        busHal.setupCaptureWithInterrupt();
 
         if (sendAck) sendAck = 0;
         else ++sendTries;
@@ -485,7 +453,7 @@ STATE_SWITCH:
 
     // Wait for ACK or resend / send next telegram
     case Bus::SEND_WAIT:
-        if (timer.flag(captureChannel) && timer.capture(captureChannel) < SEND_ACK_WAIT_TIME)
+        if (busHal.isCaptureChannelFlag() && busHal.getCaptureValue() < SEND_ACK_WAIT_TIME)
         {
             // Ignore bits that arrive too early
             break;
@@ -498,7 +466,7 @@ STATE_SWITCH:
         break;
     }
 
-    timer.resetFlags();
+    busHal.resetFlags();
 }
 
 /**
@@ -535,17 +503,17 @@ void Bus::sendTelegram(unsigned char* telegram, unsigned short length)
 {
     prepareTelegram(telegram, length);
 
-#ifdef DUMP_TELEGRAMS
+//#ifdef DUMP_TELEGRAMS
 	{
-		serial.print("QSD: ");
+//		Serial.print("QSD: ");
         for (int i = 0; i <= length; ++i)
         {
-            if (i) serial.print(" ");
-            serial.print(telegram[i], HEX, 2);
+//            if (i) Serial.print(" ");
+//            Serial.print(telegram[i], HEX, 2);
         }
-        serial.println();
+        Serial.println();
 	}
-#endif
+//#endif
     // Wait until there is space in the sending queue
     while (sendNextTel)
     {
@@ -556,16 +524,14 @@ void Bus::sendTelegram(unsigned char* telegram, unsigned short length)
     else fatalError();   // soft fault: send buffer overflow
 
     // Start sending if the bus is idle
-    noInterrupts();
+    busHal.disableInterrupts();
     if (state == IDLE)
     {
         sendTries = 0;
         state = Bus::SEND_INIT;
         D(debugLine = __LINE__);
 
-        timer.match(timeChannel, 1);
-        timer.matchMode(timeChannel, INTERRUPT | RESET);
-        timer.value(0);
+        busHal.startSending();
     }
-    interrupts();
+    busHal.enableInterrupts();
 }

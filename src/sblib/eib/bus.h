@@ -10,14 +10,12 @@
 #ifndef sblib_bus_h
 #define sblib_bus_h
 
-#include <sblib/core.h>
-#include <sblib/eib/bcu_type.h>
+#include "../types.h"
+#include "bcu_type.h"
+#include "bus_hal.h"
 
 // dump all received and sent telegrams out on the serial interface
 //#define DUMP_TELEGRAMS
-#ifdef DUMP_TELEGRAMS
-#include <sblib/serial.h>
-#endif
 
 class Bus;
 
@@ -75,14 +73,8 @@ class Bus
 public:
     /**
      * Create a bus access object.
-     *
-     * @param timer - The timer to use.
-     * @param rxPin - The pin for receiving from the bus, e.g. PIO1_8
-     * @param txPin - The pin for sending to the bus, e.g. PIO1_10
-     * @param captureChannel - the timer capture channel of rxPin, e.g. CAP0
-     * @param matchChannel - the timer match channel of txPin, e.g. MAT0
      */
-    Bus(Timer& timer, int rxPin, int txPin, TimerCapture captureChannel, TimerMatch matchChannel);
+    Bus(BusHal& busHal);
 
     /**
      * Begin using the bus.
@@ -219,12 +211,8 @@ private:
     void handleTelegram(bool valid);
 
 protected:
+    BusHal& busHal;
     friend class BcuBase;
-    Timer& timer;                //!< The timer
-    int rxPin, txPin;            //!< The pins for bus receiving and sending
-    TimerCapture captureChannel; //!< The timer channel that captures the timer value on the bus-in pin
-    TimerMatch pwmChannel;       //!< The timer channel for PWM for sending
-    TimerMatch timeChannel;      //!< The timer channel for timeouts
     volatile int ownAddr;                 //!< Our own physical address on the bus
     volatile int sendAck;                 //!< Send an acknowledge or not-acknowledge byte if != 0
 
