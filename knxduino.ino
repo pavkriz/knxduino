@@ -6,15 +6,12 @@
 #error "Only STM32F3xx devices are supported"
 #endif
 
-#include "src/sblib/eib/bus_hal.h"
-#include "src/sblib/eib/bus.h"
+#include "src/sblib/sblib_default_objects.h"
 
 #define LED_PIN PA5
 #define KNX_RX_TRESHOLD_DAC_PIN PA4
 
 int counter;
-BusHal busHal;
-Bus bus(busHal);
 
 /*
  * Global HAL IRQ Callbacks.
@@ -45,7 +42,11 @@ void setup() {
   // beware, may interfere with libraries using STM32 hardware timers (PWM, Servo, SoftSerial,...)
   attachIntHandle(&busHal._timer, isrArduinoTimerUpdateCallback);
 
-  bus.begin();
+  bcu.begin(2, 1, 1); // ABB, dummy something device
+
+  // Disable telegram processing by the lib
+  if (userRam.status & BCU_STATUS_TL)
+      userRam.status ^= BCU_STATUS_TL | BCU_STATUS_PARITY;
 }
 
 void loop() {
@@ -54,13 +55,27 @@ void loop() {
   //digitalWrite(PA5, LOW);
   //delay(100);    
   
-  Serial.print("===  ");
-  Serial.println(counter++);
+  //Serial.print("===  ");
+  //Serial.println(counter++);
   //Serial.println(HAL_COMP_GetState(&KnxBus::getInstance()->hcomp4));
   //Serial.println(HAL_COMP_GetOutputLevel(&KnxBus::getInstance()->hcomp4));
   //Serial.println(KnxBus::getInstance()->htim3.Instance->CNT);
-  Serial.println(busHal._timer.handle.Instance->CCR1);
+  //Serial.println(busHal._timer.handle.Instance->CCR1);
   //Serial.println(tim2handle.Instance->CCR4);
   
-  delay(1000);
+  //delay(1000);
+
+  if (bus.telegramReceived()) {
+        Serial.print("Telegram: ");
+        for (int i = 0; i < bus.telegramLen; ++i) {
+            if (i) Serial.print(" ");
+            Serial.print(bus.telegram[i], HEX);
+        }
+        Serial.println();
+
+        bus.discardReceivedTelegram();
+
+    }
+
+
 }
