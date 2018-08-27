@@ -151,6 +151,10 @@ inline void BusHal::begin()
 
 inline void BusHal::idleState()
 {
+    _timer.handle.Instance->ARR = (uint32_t)0xfffe;
+    __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_CC1);
+    __HAL_TIM_DISABLE_IT(&_timer.handle, TIM_IT_UPDATE);
+    // TODO PWM setup
 }
 
 inline void BusHal::waitBeforeSending() 
@@ -171,7 +175,7 @@ inline void BusHal::setupTimeChannel(unsigned int value)
 {
     _timer.handle.Instance->ARR = (uint32_t)value; // new period
     _timer.handle.Instance->CNT = 0; // reset counter
-    // TODO clear UPDATE interrupt flag here?
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_UPDATE); // clear UPDATE interrupt flag here
     __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_UPDATE); // enable UPDATE interrupt
 }
 
