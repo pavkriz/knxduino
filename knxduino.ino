@@ -56,7 +56,7 @@ void loop() {
   //delay(100);    
   
   //Serial.print("===  ");
-  //Serial.println(counter++);
+  Serial.println(counter++);
   //Serial.println(HAL_COMP_GetState(&KnxBus::getInstance()->hcomp4));
   //Serial.println(HAL_COMP_GetOutputLevel(&KnxBus::getInstance()->hcomp4));
   //Serial.println(KnxBus::getInstance()->htim3.Instance->CNT);
@@ -77,5 +77,27 @@ void loop() {
 
     }
 
+  unsigned char sendTelBuffer[32];
+  sendTelBuffer[0] = 188;
+  sendTelBuffer[1] = 17;
+  sendTelBuffer[2] = 10;
+  sendTelBuffer[3] = 0;
+  sendTelBuffer[4] = 1;
+  sendTelBuffer[5] = 225;
+  sendTelBuffer[6] = 0;
+  sendTelBuffer[7] = 128;
+  bus.sendTelegram(sendTelBuffer, 8);
+  delay(1000);
+
+  sendTelBuffer[0] = 188;
+  sendTelBuffer[1] = 17;
+  sendTelBuffer[2] = 10;
+  sendTelBuffer[3] = 0;
+  sendTelBuffer[4] = 1;
+  sendTelBuffer[5] = 225;
+  sendTelBuffer[6] = 0;
+  sendTelBuffer[7] = 129;
+  bus.sendTelegram(sendTelBuffer, 8);
+  delay(1000);
 
 }

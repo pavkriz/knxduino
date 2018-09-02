@@ -189,7 +189,7 @@ void Bus::handleTelegram(bool valid)
     // Wait before sending. In SEND_INIT we will cancel if there is nothing to be sent.
     // We need to wait anyways to avoid triggering sending from the application code when
     // the bus is in cooldown. This could happen if we set state to Bus::IDLE here.
-    busHal.waitBeforeSending();
+    busHal.waitBeforeSending(sendAck ? SEND_ACK_WAIT_TIME - PRE_SEND_TIME : SEND_WAIT_TIME - PRE_SEND_TIME);
 
     collision = false;
     state = Bus::SEND_INIT;

@@ -24,6 +24,7 @@
 
 #include "stm32f3xx_hal.h"
 #include <timer.h>
+#include <Arduino.h>
 
 /*
  *    STM32 implementation
@@ -35,7 +36,7 @@ public:
     BusHal();
     void begin();
     void idleState();
-    void waitBeforeSending();
+    void waitBeforeSending(unsigned int timeValue);
     bool isCaptureChannelFlag();
     bool isTimeChannelFlag();
     void setupTimeChannel(unsigned int value);
@@ -111,7 +112,7 @@ inline void BusHal::begin()
     // HAL stuff
     __HAL_RCC_TIM3_CLK_ENABLE();
 
-    GPIO_InitStruct.Pin = GPIO_PIN_6;
+    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -141,24 +142,38 @@ inline void BusHal::begin()
         _Error_Handler(__FILE__, __LINE__);
     }
 
+    sConfigOC.OCMode = TIM_OCMODE_PWM1;
+    sConfigOC.Pulse = 0xffff;    // no pulses, all high (means no pulses)
+    sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
+    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+    HAL_TIM_PWM_ConfigChannel(htim, &sConfigOC, TIM_CHANNEL_2);
+    // the stupid HAL_TIM_PWM_ConfigChannel automaticaly enables TIM_CCMR1_OC2PE preload bit, but we dont want to use it
+    htim->Instance->CCMR1 &= ~TIM_CCMR1_OC2PE;  // disable TIM_CCMR1_OC2PE
+
     if (HAL_TIM_Base_Start(htim) != HAL_OK) {
         _Error_Handler(__FILE__, __LINE__);
     }
 
     HAL_TIM_IC_Start_IT(htim, TIM_CHANNEL_1);
-
+    // TODO? make sure we don't make any unintentional pulse here
+    HAL_TIM_PWM_Start(htim, TIM_CHANNEL_2);
 }
 
 inline void BusHal::idleState()
 {
-    _timer.handle.Instance->ARR = (uint32_t)0xfffe;
+    _timer.handle.Instance->ARR = 0xfffe;
     __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_CC1);
     __HAL_TIM_DISABLE_IT(&_timer.handle, TIM_IT_UPDATE);
-    // TODO PWM setup
+    _timer.handle.Instance->CCR2 = 0xffff;   // no pulses
 }
 
-inline void BusHal::waitBeforeSending() 
+inline void BusHal::waitBeforeSending(unsigned int timeValue) 
 {
+    _timer.handle.Instance->ARR = (uint32_t)timeValue;
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_UPDATE); // clear UPDATE interrupt flag here
+    __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_UPDATE); // enable UPDATE interrupt
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_CC1); // clear Capture Channel 1 interrupt flag here
+    __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_CC1); // enable Channel 1 interrupt flag here
 }
 
 inline bool BusHal::isCaptureChannelFlag()
@@ -184,8 +199,14 @@ inline unsigned int BusHal::getCaptureValue()
     return _timer.handle.Instance->CCR1;
 }
 
-inline void BusHal::setupStartBit(int pwmMatch, int timeMatch)
+inline void BusHal::setupStartBit(int pwmMatch, int timeMatch) 
 {
+    _timer.handle.Instance->CCR2 = (uint32_t)pwmMatch;
+    _timer.handle.Instance->ARR = (uint32_t)timeMatch; // new period
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_UPDATE); // clear UPDATE interrupt flag here
+    __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_UPDATE); // enable UPDATE interrupt
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_CC1); // clear Capture Channel 1 interrupt flag here
+    __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_CC1); // enable Channel 1 interrupt flag here
 }
 
 inline unsigned int BusHal::getTimerValue()
@@ -195,10 +216,12 @@ inline unsigned int BusHal::getTimerValue()
 
 inline unsigned int BusHal::getPwmMatch()
 {
+    return _timer.handle.Instance->CCR2;
 }
 
 inline void BusHal::setPwmMatch(unsigned int pwmMatch)
 {
+    _timer.handle.Instance->CCR2 = (uint32_t)pwmMatch;
 }
 
 inline void BusHal::setTimeMatch(unsigned int timeMatch)
@@ -208,22 +231,32 @@ inline void BusHal::setTimeMatch(unsigned int timeMatch)
 
 inline void BusHal::setupCaptureWithInterrupt()
 {
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_CC1); // clear Capture Channel 1 interrupt flag here
+    __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_CC1); // enable Channel 1 interrupt flag here
 }
 
 inline void BusHal::setupCaptureWithoutInterrupt()
 {
+    __HAL_TIM_DISABLE_IT(&_timer.handle, TIM_IT_CC1); // disable Channel 1 interrupt flag here
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_CC1); // clear Capture Channel 1 interrupt flag here
 }
 
 inline void BusHal::disableInterrupts()
 {
+    __disable_irq();
 }
 
 inline void BusHal::enableInterrupts()
 {
+    __enable_irq();
 }
 
 inline void BusHal::startSending()
 {
+    _timer.handle.Instance->ARR = 1;
+    __HAL_TIM_CLEAR_FLAG(&_timer.handle, TIM_FLAG_UPDATE); // clear UPDATE interrupt flag here
+    __HAL_TIM_ENABLE_IT(&_timer.handle, TIM_IT_UPDATE); // enable UPDATE interrupt
+    _timer.handle.Instance->CNT = 0; // reset counter
 }
 
 #else

@@ -8,6 +8,7 @@
 * Connections:
     * KNX RX voltage divider 33k:2k -> PB0 (COMP4_INP)
     * PB1 (COMP4_OUT) -> PA6 (TIM3_CH1)
+    * PA7 (TIM3_CH2) -> TX MOSFET (shorting 68R to GND, 10k pull-down on gate)
     * KNX- <-> GND
 
 
