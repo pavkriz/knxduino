@@ -20874,16 +20874,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <text x="-139.7" y="124.46" size="1.778" layer="91">Calc divider in order to match KNX spec.
  hysteresis to COMP's selectable hysteresis</text>
 <text x="-162.56" y="2.54" size="1.778" layer="91">Known issues:
-Use switch with longer leads (adjust PCB)? no necessary.
 0805 diodes are quite expensive (uncommon)!
-Bigger package for current sensing R!
-Bigger package for 10u C  and 22uF at DCDC!
-Ferite bead peads are too small
-Make STCS1 pads longer for hand soldering
-Bigger radius place for 100uF and/or consider using SMD version
 Make PCB bigger in order to better fit into ITALTRONIC KNX BOX.
-C6 (NRST C) is too close to DBG header, should be at MCU
-Move more Caps. to bottom layer for easier reflow soldering.</text>
+</text>
 </plain>
 <instances>
 <instance part="+3V1" gate="G$1" x="-40.64" y="40.64" smashed="yes">
