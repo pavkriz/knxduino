@@ -23,8 +23,32 @@
 #ifdef STM32F303xE
 
 #include "stm32f3xx_hal.h"
-#include <timer.h>
+#include "../timer.h"
+
+#ifdef IS_BOOTLOADER
+
+typedef struct timer_s stimer_t;
+
+struct timer_s{
+  /*  The 1st 2 members TIM_TypeDef *timer
+     *  and TIM_HandleTypeDef handle should
+     *  be kept as the first members of this struct
+     *  to have get_timer_obj() function work as expected
+     */
+  TIM_TypeDef *timer;
+  TIM_HandleTypeDef handle;
+  uint8_t idx;
+  void (*irqHandle)(stimer_t *);
+  void (*irqHandleOC)(stimer_t *, uint32_t);
+  //PinName pin;
+  //volatile timerPinInfo_t pinInfo;
+};
+
+#else
+
 #include <Arduino.h>
+
+#endif
 
 /*
  *    STM32 implementation
@@ -121,8 +145,25 @@ inline void BusHal::begin()
 
     HAL_NVIC_EnableIRQ(TIM3_IRQn);
 
+    RCC_ClkInitTypeDef    clkconfig;
+    uint32_t              uwTimclock, uwAPB1Prescaler = 0U;
+    uint32_t              uwPrescalerValue = 0U;
+    uint32_t              pFLatency;
+    /* Get clock configuration */
+    HAL_RCC_GetClockConfig(&clkconfig, &pFLatency);
+    /* Get APB1 prescaler */
+    uwAPB1Prescaler = clkconfig.APB1CLKDivider;
+    /* Compute TIM clock */
+    if (uwAPB1Prescaler == RCC_HCLK_DIV1) {
+      uwTimclock = HAL_RCC_GetPCLK1Freq();
+    } else {
+      uwTimclock = 2U*HAL_RCC_GetPCLK1Freq();
+    }
+    /* Compute the prescaler value to have TIM counter clock equal to 1MHz */
+    uwPrescalerValue = (uint32_t) ((uwTimclock / 1000000U) - 1U);
+
     htim->Instance = _timer.timer;
-    htim->Init.Prescaler = 72; // 72MHz/72 = 1MHz (ie. 1us tick)
+    htim->Init.Prescaler = uwPrescalerValue; // 72MHz/72 = 1MHz (ie. 1us tick)
     htim->Init.CounterMode = TIM_COUNTERMODE_UP;
     htim->Init.Period = 65535; // 2^16-1
     htim->Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;

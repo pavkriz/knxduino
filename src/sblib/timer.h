@@ -10,7 +10,11 @@
 #ifndef sblib_timer_h
 #define sblib_timer_h
 
+#ifdef IS_BOOTLOADER
+#define millis() HAL_GetTick()
+#else
 #include <Arduino.h>
+#endif
 
 /**
  * Get the number of milliseconds that elapsed since the reference time.

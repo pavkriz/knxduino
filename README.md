@@ -11,11 +11,18 @@
     * PA7 (TIM3_CH2) -> TX MOSFET (shorting 68R to GND, 10k pull-down on gate)
     * KNX- <-> GND
 
+## Development Environment
 
 
 Testing IDE: [Visual Studio Code](https://code.visualstudio.com/) + [Arduino plugin](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino) + [Cortex-Debug plugin](https://marketplace.visualstudio.com/items?itemName=marus25.cortex-debug)
 
 Testing Arduino Core: Additional URL https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json version 1.3.0
+
+Currently compiles to 31732 bytes of Flash (no bootloader used yet). Thus perfectly OK for 128kB devices.
+
+### Bootloader
+
+Use Atollic TrueSTUDIO for STM32
 
 ## Known issues and steps to make it work
 

@@ -22,6 +22,14 @@
         "vector": "cpp",
         "stm32_def.h": "c",
         "hw_config.h": "c",
-        "functional": "cpp"
+        "functional": "cpp",
+        "typeinfo": "cpp",
+        "condition_variable": "cpp",
+        "future": "cpp",
+        "ratio": "cpp",
+        "system_error": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "chrono": "cpp"
     }
 }

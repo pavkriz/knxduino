@@ -130,12 +130,12 @@ void Bus::idleState()
 void Bus::handleTelegram(bool valid)
 {
 //    D(digitalWrite(PIO1_4, 1));         // purple: end of telegram
-    Serial.println("RCV:");
-    for (int i = 0; i < nextByteIndex; ++i) {
-        Serial.print(telegram[i]);
-        Serial.print(" ");
-    }
-    Serial.println();
+    //Serial.println("RCV:");
+    //for (int i = 0; i < nextByteIndex; ++i) {
+    //    Serial.print(telegram[i]);
+    //    Serial.print(" ");
+    //}
+    //Serial.println();
 
     sendAck = 0;
 
@@ -255,7 +255,7 @@ STATE_SWITCH:
 
     case Bus::RECV_BYTE:
         timeout = busHal.isTimeChannelFlag();
-
+        
         if (timeout) time = BYTE_TIME;
         else time = busHal.getCaptureValue();
 
@@ -511,7 +511,7 @@ void Bus::sendTelegram(unsigned char* telegram, unsigned short length)
 //            if (i) Serial.print(" ");
 //            Serial.print(telegram[i], HEX, 2);
         }
-        Serial.println();
+        //Serial.println();
 	}
 //#endif
     // Wait until there is space in the sending queue

@@ -18,8 +18,11 @@ typedef unsigned char byte;
 /**
  * An unsigned 2 byte value.
  */
-//typedef unsigned short word;  // is defined in Arduino Wiring
+#ifdef IS_BOOTLOADER
+typedef unsigned short word;  // is defined in Arduino Wiring
+#else
 #include <wiring.h>
+#endif
 
 /**
  * Declare a function as always inline

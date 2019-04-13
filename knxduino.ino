@@ -20,12 +20,14 @@ int counter;
  */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef* htim)
 {
+    // TODO filter particular timer ?
     busHal.isrCallbackCapture(htim);
     bus.timerInterruptHandler();
 }
 
 static void isrArduinoTimerUpdateCallback(stimer_t *obj)
 {
+    // TODO filter particular timer ?
     busHal.isrCallbackUpdate(&obj->handle);
     bus.timerInterruptHandler();
 }
