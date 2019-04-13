@@ -1,0 +1,12 @@
+*.lbr
+*.s#*
+*.l#*
+*.b#*
+*.ioc
+*.zip
+*.cmp
+*.gpi
+*.plc
+*.sol
+*.sts
+*.stc
