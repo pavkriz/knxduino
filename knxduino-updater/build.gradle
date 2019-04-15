@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group 'org.hkfree.knxduino'
@@ -7,10 +8,27 @@ version '1.0-SNAPSHOT'
 
 sourceCompatibility = 9
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'org.hkfree.knxduino.updater.Updater',
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    manifest.from jar.manifest
+    classifier = 'all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'com.github.calimero', name: 'calimero-core', version: '2.4'
 }

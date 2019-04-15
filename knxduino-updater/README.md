@@ -1,8 +1,21 @@
-# selfbus-updater
+# KNXduino-updater
 
-	Selfbus Updater 0.1
+KNXduino Updater 0.3
 
-	usage: selfbus-updater.jar [options] <host|port> -fileName <filename.bin> -device <KNX device address>
+# Requirements
+
+* JDK 9+
+* gradle
+
+# Build
+
+    gradle fatJar
+    
+*knxduino-updater-1.0-SNAPSHOT-all.jar* file is created in build/libs directory. 
+
+# Usage
+
+	usage: knxduino-updater-1.0-SNAPSHOT-all.jar [options] <host|port> -fileName <filename.bin> -device <KNX device address>
 
 	options:
 	 -help -h                 show this help message
@@ -25,4 +38,4 @@
 To be used like this:
 
 
-	java -jar selfbus-updater.jar -nat <ip address of KNX/IP GW> -fileName "in16-bim112.bin" -appVersionPtr 0x3263 -startAddress 0x2000 -uid 05:B0:01:02:E9:80:AC:AE:E9:07:47:55
+	java -jar knxduino-updater-1.0-SNAPSHOT-all.jar -nat <ip address of KNX/IP GW> -fileName "in16-bim112.bin" -appVersionPtr 0x3263 -startAddress 0x2000 -uid 05:B0:01:02:E9:80:AC:AE:E9:07:47:55

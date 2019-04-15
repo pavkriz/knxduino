@@ -1,4 +1,4 @@
-package de.baycom.selfbus.updater;
+package org.hkfree.knxduino.updater;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -8,35 +8,30 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.CRC32;
 
 import tuwien.auto.calimero.IndividualAddress;
+import tuwien.auto.calimero.KNXException;
+import tuwien.auto.calimero.KNXFormatException;
+import tuwien.auto.calimero.KNXIllegalArgumentException;
 import tuwien.auto.calimero.Settings;
-import tuwien.auto.calimero.exception.KNXException;
-import tuwien.auto.calimero.exception.KNXFormatException;
-import tuwien.auto.calimero.exception.KNXIllegalArgumentException;
 import tuwien.auto.calimero.knxnetip.KNXnetIPConnection;
 import tuwien.auto.calimero.link.KNXNetworkLink;
 import tuwien.auto.calimero.link.KNXNetworkLinkFT12;
 import tuwien.auto.calimero.link.KNXNetworkLinkIP;
 import tuwien.auto.calimero.link.medium.KNXMediumSettings;
-import tuwien.auto.calimero.link.medium.PLSettings;
 import tuwien.auto.calimero.link.medium.RFSettings;
 import tuwien.auto.calimero.link.medium.TPSettings;
-import tuwien.auto.calimero.log.LogLevel;
-import tuwien.auto.calimero.log.LogManager;
-import tuwien.auto.calimero.log.LogService;
-import tuwien.auto.calimero.log.LogStreamWriter;
-import tuwien.auto.calimero.log.LogWriter;
 import tuwien.auto.calimero.mgmt.Destination;
 import tuwien.auto.calimero.mgmt.ManagementClient;
-import tuwien.auto.calimero.mgmt.ManagementClientImpl;
 
 /**
- * A tool for Calimero updating a Selfbus device in a KNX network.
+ * A tool for Calimero updating a KNXduino device in a KNX network.
  * <p>
  * Updater is a {@link Runnable} tool implementation allowing a user to update
- * selbus devices.<br>
+ * KNXduino devices.<br>
  * <br>
  * This tool supports KNX network access using a KNXnet/IP connection or FT1.2
  * connection. It uses the {@link ManagementClient} functionality of the library
@@ -50,13 +45,12 @@ import tuwien.auto.calimero.mgmt.ManagementClientImpl;
  * during its execution are written to <code>System.out</code>.
  *
  * @author Deti Fliegl
+ * @author Pavel Kriz
  */
-public class updater implements Runnable {
-    private static final String tool = "Selfbus Updater 0.2";
+public class Updater implements Runnable {
+    private static final String tool = "KNXduino Updater 0.3";
     private static final String sep = System.getProperty("line.separator");
-
-    private static LogService out = LogManager.getManager().getLogService(
-            "tools");
+    private final static Logger LOGGER = Logger.getLogger(Updater.class.getName());
 
     private final Map options = new HashMap();
 
@@ -73,7 +67,7 @@ public class updater implements Runnable {
      * @throws KNXIllegalArgumentException
      *             on unknown/invalid options
      */
-    public updater(final String[] args) {
+    public Updater(final String[] args) {
         // read in user-supplied command line options
         try {
             parseOptions(args);
@@ -85,20 +79,15 @@ public class updater implements Runnable {
     }
 
     public static void main(final String[] args) {
-        final LogWriter w = LogStreamWriter.newUnformatted(LogLevel.WARN,
-                System.out, true, false);
-        LogManager.getManager().addWriter("", w);
         try {
-            final updater d = new updater(args);
-            w.setLogLevel(d.options.containsKey("verbose") ? LogLevel.TRACE
-                    : LogLevel.WARN);
+            final Updater d = new Updater(args);
             final ShutdownHandler sh = new ShutdownHandler().register();
             d.run();
             sh.unregister();
         } catch (final Throwable t) {
-            out.log(LogLevel.ERROR, "parsing options", t);
+            LOGGER.log(Level.SEVERE, "parsing options " + t);
+            t.printStackTrace();
         } finally {
-            LogManager.getManager().shutdown(true);
         }
     }
 
@@ -113,9 +102,11 @@ public class updater implements Runnable {
      */
     protected void onCompletion(final Exception thrown, final boolean canceled) {
         if (canceled)
-            out.info("\nreading device info canceled");
-        if (thrown != null)
-            out.error("\ncompleted", thrown);
+            LOGGER.log(Level.INFO, "reading device info canceled");
+        if (thrown != null) {
+            LOGGER.log(Level.SEVERE, "completed " + thrown);
+            thrown.printStackTrace();
+        }
     }
 
     /**
@@ -143,16 +134,23 @@ public class updater implements Runnable {
             }
         }
         // create local and remote socket address for network link
-        final InetSocketAddress local = createLocalSocket(
+        InetSocketAddress local = createLocalSocket(
                 (InetAddress) options.get("localhost"),
                 (Integer) options.get("localport"));
+        if (local == null) local = new InetSocketAddress(0);
         final InetSocketAddress host = new InetSocketAddress(
                 (InetAddress) options.get("host"),
                 ((Integer) options.get("port")).intValue());
-        final int mode = options.containsKey("routing") ? KNXNetworkLinkIP.ROUTING
-                : KNXNetworkLinkIP.TUNNELING;
-        return new KNXNetworkLinkIP(mode, local, host,
-                options.containsKey("nat"), medium);
+        if (options.containsKey("routing")) {
+            //KNXNetworkLinkIP.ROUTING
+            //return KNXNetworkLinkIP.newRoutingLink(local, host,	options.containsKey("nat"), medium);
+            throw new RuntimeException("not implemented yet");
+            //return KNXNetworkLinkIP.newRoutingLink(local, host, medium);
+        } else {
+            //KNXNetworkLinkIP.TUNNELING;
+            return KNXNetworkLinkIP.newTunnelingLink(local, host, options.containsKey("nat"), medium);
+        }
+
     }
 
     /**
@@ -277,14 +275,14 @@ public class updater implements Runnable {
         // created medium setting, since there is no user cmd line option for
         // this
         // so KNXnet/IP server will supply address
-        if (id.equals("tp0"))
-            return TPSettings.TP0;
-        else if (id.equals("tp1"))
+        //if (id.equals("tp0"))
+        //	return TPSettings.TP0;
+        if (id.equals("tp1"))
             return TPSettings.TP1;
-        else if (id.equals("p110"))
-            return new PLSettings(false);
-        else if (id.equals("p132"))
-            return new PLSettings(true);
+            //else if (id.equals("p110"))
+            //	return new PLSettings(false);
+            //else if (id.equals("p132"))
+            //	return new PLSettings(true);
         else if (id.equals("rf"))
             return new RFSettings(null);
         else
@@ -299,7 +297,7 @@ public class updater implements Runnable {
     private static void showUsage() {
         final StringBuffer sb = new StringBuffer();
         sb.append(tool).append(sep).append(sep);
-        sb.append("usage: selfbus-updater.jar")
+        sb.append("usage: KNXduino-updater.jar")
                 .append(" [options] <host|port> -fileName <filename.bin> -device <KNX device address>")
                 .append(sep).append(sep);
         sb.append("options:").append(sep);
@@ -332,18 +330,18 @@ public class updater implements Runnable {
                 " -device <knxid>          KNX device address in normal operating mode (default none)")
                 .append(sep);
         sb.append(
-                " -startAddress <hex/dec>  start address in flash memory of selfbus device")
+                " -startAddress <hex/dec>  start address in flash memory of KNXduino device")
                 .append(sep);
         sb.append(" -appVersionPtr <hex/dev> pointer to APP_VERSION string")
                 .append(sep);
         sb.append(
                 " -uid <hex>               send UID to unlock (default: request UID to unlock)")
                 .append(sep);
-        out.log(LogLevel.ALWAYS, sb.toString(), null);
+        LOGGER.log(Level.INFO, sb.toString());
     }
 
     private static void showVersion() {
-        out.log(LogLevel.ALWAYS, Settings.getLibraryHeader(false), null);
+        LOGGER.log(Level.INFO, Settings.getLibraryHeader(false));
     }
 
     private static final class ShutdownHandler extends Thread {
@@ -483,10 +481,9 @@ public class updater implements Runnable {
         // ??? as with the other tools, maybe put this into the try block to
         // also call onCompletion
         if (options.isEmpty()) {
-            out.log(LogLevel.ALWAYS, tool,
-                    null);
+            LOGGER.log(Level.INFO, tool);
             showVersion();
-            out.log(LogLevel.ALWAYS, "type -help for help message", null);
+            LOGGER.log(Level.INFO, "type -help for help message");
             return;
         }
         if (options.containsKey("help")) {
@@ -504,7 +501,7 @@ public class updater implements Runnable {
         FileInputStream fis = null;
 
         try {
-            ManagementClient mc;
+            UpdatableManagementClientImpl mc;
             Destination pd;
             String fName = "";
             int appVersionAddr = 0;
@@ -535,7 +532,7 @@ public class updater implements Runnable {
             }
 
             link = createLink();
-            mc = new ManagementClientImpl(link);
+            mc = new UpdatableManagementClientImpl(link);
             pd = mc.createDestination(progDevice, true);
 
             if (device != null) {
@@ -569,7 +566,7 @@ public class updater implements Runnable {
                 } else {
                     System.out.println("Reqest UID failed");
                     mc.restart(pd);
-                    throw new RuntimeException("Selfbus udpate failed.");
+                    throw new RuntimeException("KNXduino udpate failed.");
                 }
             }
 
@@ -577,7 +574,7 @@ public class updater implements Runnable {
             result = mc.sendUpdateData(pd, UPD_UNLOCK_DEVICE, uid);
             if (checkResult(result) != 0) {
                 mc.restart(pd);
-                throw new RuntimeException("Selfbus udpate failed.");
+                throw new RuntimeException("KNXduino udpate failed.");
             }
 
             fis = new FileInputStream(fName);
@@ -596,7 +593,7 @@ public class updater implements Runnable {
                     result = mc.sendUpdateData(pd, UPD_ERASE_SECTOR, sector);
                     if (checkResult(result) != 0) {
                         mc.restart(pd);
-                        throw new RuntimeException("Selfbus udpate failed.");
+                        throw new RuntimeException("KNXduino udpate failed.");
                     }
                 }
             }
@@ -632,7 +629,7 @@ public class updater implements Runnable {
                             if (checkResult(result, false) != 0) {
                                 mc.restart(pd);
                                 throw new RuntimeException(
-                                        "Selfbus udpate failed.");
+                                        "KNXduino udpate failed.");
                             }
                             nDone += txSize;
                             progSize += txSize;
@@ -657,7 +654,7 @@ public class updater implements Runnable {
                             if (checkResult(result) != 0) {
                                 mc.restart(pd);
                                 throw new RuntimeException(
-                                        "Selfbus udpate failed.");
+                                        "KNXduino udpate failed.");
                             }
                             progAddress += progSize;
                             progSize = 0;
@@ -708,7 +705,7 @@ public class updater implements Runnable {
                 result = mc.sendUpdateData(pd, UPD_SEND_DATA, txBuf);
                 if (checkResult(result, false) != 0) {
                     mc.restart(pd);
-                    throw new RuntimeException("Selfbus udpate failed.");
+                    throw new RuntimeException("KNXduino udpate failed.");
                 }
                 nDone += txSize;
             }
@@ -727,7 +724,7 @@ public class updater implements Runnable {
                     programBootDescriptor);
             if (checkResult(result) != 0) {
                 mc.restart(pd);
-                throw new RuntimeException("Selfbus udpate failed.");
+                throw new RuntimeException("KNXduino udpate failed.");
             }
             Thread.sleep(1000);
             System.out.print("Restarting device ... ");
@@ -745,6 +742,8 @@ public class updater implements Runnable {
             e.printStackTrace();
         } catch (IOException e) {
             // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (Throwable e) {
             e.printStackTrace();
         } finally {
             if (link != null)
