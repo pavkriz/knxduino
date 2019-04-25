@@ -9,12 +9,14 @@
  */
 
 #include "stm32f3xx.h"
+#include "stm32f3xx_hal.h"
 
 #include <sblib/eib.h>
 #include <sblib/timeout.h>
 #include <sblib/internal/variables.h>
 //#include <sblib/io_pin_names.h>
 #include "bcu_updater.h"
+#include "serial.h"
 
 static BcuUpdate _bcu = BcuUpdate();
 BcuBase& bcu = _bcu;
@@ -66,6 +68,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		bus.timerInterruptHandler();
 	}
 }
+
 
 void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac)
 {
@@ -166,8 +169,7 @@ void run_updater()
 {
     lib_setup();
 #ifdef DUMP_TELEGRAMS
-    serial.setRxPin(PIO3_1);
-    serial.setTxPin(PIO3_0);
+    serial_setup();
 #endif
     setup();
 
@@ -180,6 +182,9 @@ void run_updater()
 
 int main(void)
 {
+	// disable buffering - worse performance, no Imprecise bus faults
+	uint32_t *ACTLR = (uint32_t *)0xE000E008; *ACTLR = *ACTLR | 2;
+
     unsigned int * magicWord = (unsigned int *) 0x10000000;
     if (*magicWord == 0x5E1FB055)
     {
@@ -188,15 +193,16 @@ int main(void)
     }
     *magicWord = 0;
 
-    // PIN_PROG: Configure PC13 as pull-down input (BUTTON)
+    // PIN_PROG: Configure PC13 as input (BUTTON), has external pullup
+    __HAL_RCC_GPIOC_CLK_ENABLE();
 	GPIO_InitTypeDef GPIO_InitStruct;
 	GPIO_InitStruct.Pin = GPIO_PIN_13;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13))
+    if (!HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13))
     {
         run_updater();
     }

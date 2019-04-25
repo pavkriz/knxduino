@@ -20,7 +20,7 @@
 #include "../timer.h"
 
 #if defined DUMP_TELEGRAMS || defined DUMP_MEM_OPS
-#include <sblib/serial.h>
+//#include <sblib/serial.h>
 #endif
 
 extern unsigned int writeUserEepromTime;

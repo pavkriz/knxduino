@@ -10,8 +10,10 @@
 
 #include "eib.h"
 //#include <sblib/io_pin_names.h>
+#ifndef IS_BOOTLOADER
 static BCU _bcu = BCU();
 BcuBase& bcu = _bcu;
+#endif
 
 // The EIB bus access objects
 BusHal busHal;

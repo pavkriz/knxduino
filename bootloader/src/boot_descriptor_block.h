@@ -14,8 +14,8 @@ extern "C"
 {
 #endif
 
-#define FIRST_SECTOR    0x2000
-#define BOOT_BLOCK_SIZE  0x100
+#define FIRST_SECTOR    0x8000
+#define BOOT_BLOCK_SIZE  0x800
 #define BOOT_BLOCK_PAGE ((FIRST_SECTOR / BOOT_BLOCK_SIZE) - 1)
 
 typedef struct
@@ -24,7 +24,7 @@ typedef struct
     unsigned int endAddress;
     unsigned int crc;
     unsigned int appVersionAddress;
-}__attribute__ ((aligned (256))) AppDescriptionBlock;
+}__attribute__ ((aligned (BOOT_BLOCK_SIZE))) AppDescriptionBlock;
 
 unsigned int checkApplication(AppDescriptionBlock * block);
 

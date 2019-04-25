@@ -45,11 +45,13 @@ protected:
      * @param senderSeqNo - the sequence number of the sender, 0 if not required
      */
     void sendConControlTelegram(int cmd, int senderSeqNo);
+
+    void dumpTelegram();
 };
 
 inline bool BcuUpdate::progPinStatus()
 {
     //return progButtonDebouncer.value();
-	return false; // TODO
+	return HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
 }
 #endif /* BCU_UPDATE_H_ */

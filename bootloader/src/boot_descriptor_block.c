@@ -25,20 +25,24 @@ unsigned int checkVectorTable(unsigned int start)
 
 unsigned int checkApplication(AppDescriptionBlock * block)
 {
-    if (block->startAddress > 0x5000)
+	if (block->startAddress >= 0x08020000)	// flash end
         return 0;
-    if (block->endAddress > 0x100000)
+    if (block->startAddress < 0x08004000)	// bootloader end (begin of application's flash region)
         return 0;
-    if (block->startAddress == block->endAddress)
+    if (block->endAddress >= 0x08020000)		// flash end
+        return 0;
+    if (block->startAddress >= block->endAddress)
         return 0;
 
     unsigned int crc = crc32(0xFFFFFFFF, (unsigned char *) block->startAddress,
             block->endAddress - block->startAddress);
-    if (crc == block->crc)
-    {
-        return checkVectorTable(block->startAddress);
-    }
-    return 0;
+
+    return (crc == block->crc);
+    //if (crc == block->crc)
+    //{
+        //return checkVectorTable(block->startAddress);	// not supported on STM32
+    //}
+    //return 0;
 }
 
 inline unsigned char * getAppVersion(AppDescriptionBlock * block)

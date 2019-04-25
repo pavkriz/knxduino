@@ -19,7 +19,7 @@
 #include <string.h>
 
 #ifdef DUMP_TELEGRAMS
-#include <sblib/serial.h>
+//#include <sblib/serial.h>
 #endif
 
 // The interrupt handler for the EIB bus access object
@@ -42,8 +42,8 @@ void BcuBase::begin_BCU(int manufacturer, int deviceType, int version)
 {
 	_begin();
 #ifdef DUMP_TELEGRAMS
-    serial.begin(115200);
-    serial.println("Telegram dump enabled");
+//    serial.begin(115200);
+//    serial.println("Telegram dump enabled");
 #endif
 
     sendTelegram[0] = 0;
@@ -124,19 +124,20 @@ void BcuBase::loop()
 
 #ifdef DUMP_TELEGRAMS
 	{
-    	extern unsigned char telBuffer[];
-    	extern unsigned int telLength ;
-    	if (telLength > 0)
-    	{
-    		serial.print("RCV: ");
-            for (int i = 0; i < telLength; ++i)
-            {
-                if (i) serial.print(" ");
-                serial.print(telBuffer[i], HEX, 2);
-            }
-            serial.println();
-            telLength = 0;
-    	}
+    	// TODO
+//    	extern unsigned char telBuffer[];
+//    	extern unsigned int telLength ;
+//    	if (telLength > 0)
+//    	{
+//    		serial.print("RCV: ");
+//            for (int i = 0; i < telLength; ++i)
+//            {
+//                if (i) serial.print(" ");
+//                serial.print(telBuffer[i], HEX, 2);
+//            }
+//            serial.println();
+//            telLength = 0;
+//    	}
 	}
 #endif
 

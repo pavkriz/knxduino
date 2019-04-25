@@ -8,10 +8,22 @@
 #include "bcu_updater.h"
 
 #ifdef DUMP_TELEGRAMS
-#define d(x) {serial.println(x);}
+///#define d(x) {serial.println(x);}
+#include "serial.h"
+#define d(...) {UART2_printf(__VA_ARGS__);}
 #else
-#define d(x)
+#define d(...)
 #endif
+
+void BcuUpdate::dumpTelegram() {
+	#ifdef DUMP_TELEGRAMS
+		d("TLG: ");
+		for (int i = 0; i <= bus.telegramLen; ++i) {
+			d("%02X ", bus.telegram[i]);
+		}
+		d("\n");
+	#endif
+}
 
 void BcuUpdate::processTelegram()
 {
@@ -25,12 +37,12 @@ void BcuUpdate::processTelegram()
         {
             if (tpci & 0x80)  // A connection control command
             {
-                d("processControlTelegram\n");
+                d("ProcCT\n");
                 processConControlTelegram(bus.telegram[6]);
             }
             else
             {
-                d("processDirectTelegram\n");
+                d("ProcDT\n");
                 processDirectTelegram(apci);
             }
         }
@@ -44,6 +56,8 @@ extern unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
 
 void BcuUpdate::processDirectTelegram(int apci)
 {
+	dumpTelegram();
+
     const int senderAddr = (bus.telegram[1] << 8) | bus.telegram[2];
     const int senderSeqNo = bus.telegram[6] & 0x3c;
     unsigned char sendAck = 0;
@@ -71,7 +85,7 @@ void BcuUpdate::processDirectTelegram(int apci)
 
     if (sendAck)
     {
-        d("TX-ACK\n");
+        d("TX-ACK senderSeqNo=%d\n", senderSeqNo);
         sendConControlTelegram(sendAck, senderSeqNo);
     }
     else
@@ -92,7 +106,7 @@ void BcuUpdate::processDirectTelegram(int apci)
         }
         else
             incConnectedSeqNo = false;
-        d("TX-DATA\n");
+        d("TX-DATA connectedSeqNo=%d\n", connectedSeqNo);
         bus.sendTelegram(sendTelegram, telegramSize(sendTelegram));
     }
 }

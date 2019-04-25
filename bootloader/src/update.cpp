@@ -70,7 +70,7 @@
  */
 enum
 {
-    UPD_ERASE_SECTOR = 0,
+    UPD_ERASE_PAGES = 0,
     UPD_SEND_DATA = 1,
     UPD_PROGRAM = 2,
     UPD_UPDATE_BOOT_DESC = 3,
@@ -111,6 +111,10 @@ enum UPD_Status
     ,
     UPD_UID_MISMATCH               //<! UID sent to unlock the device is invalid
     ,
+	UPD_ERASE_FAILED				// page erase failed
+	,
+	UPD_FLASH_ERROR					// page program (flash) failed
+	,
     UDP_NOT_IMPLEMENTED = 0xFFFF    //<! this command is not yet implemented
 };
 
@@ -154,9 +158,9 @@ static bool _prepareReturnTelegram(unsigned int count, unsigned char cmd)
 /*
  * Checks if the requested sector is allowed to be erased.
  */
-inline bool sectorAllowedToErease(unsigned int sectorNumber)
+inline bool pageAllowedToErase(unsigned int sectorNumber)
 {
-    if (sectorNumber == 0)
+    if (sectorNumber < 8)
         return false; // bootloader sector
     return true; // TODO
     //return !((sectorNumber >= ADDRESS2SECTOR(__vectors_start__))
@@ -261,15 +265,30 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
             else
                 lastError = UPD_APPLICATION_NOT_STARTABLE;
             break;
-        case UPD_ERASE_SECTOR:
+        case UPD_ERASE_PAGES:
             if (deviceLocked == DEVICE_UNLOCKED)
             {
-                if (sectorAllowedToErease(data[3]))
-                {
-                    lastError = iapEraseSector(data[3]);
+            	int pageNr = data[3];
+            	int pages = data[4];
+            	for (int i = pageNr; i < pageNr + pages; i++) {
+            		if (!pageAllowedToErase(i))
+            			lastError = UPD_SECTOR_NOT_ALLOWED_TO_ERASE;
+            	}
+            	if (lastError != UPD_SECTOR_NOT_ALLOWED_TO_ERASE) {
+                	FLASH_EraseInitTypeDef  pEraseInit;
+                	HAL_StatusTypeDef       status = HAL_OK;
+                	uint32_t PageError = 0;
+
+                	pEraseInit.NbPages = pages;
+                	pEraseInit.PageAddress = pageNr*2048;
+                	pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;
+
+                	HAL_FLASH_Unlock();
+                	status = HAL_FLASHEx_Erase(&pEraseInit, &PageError);
+                	HAL_FLASH_Lock();
+
+                    lastError = (status == HAL_OK) ? IAP_SUCCESS : UPD_ERASE_FAILED;
                 }
-                else
-                    lastError = UPD_SECTOR_NOT_ALLOWED_TO_ERASE;
             }
             else
                 lastError = UPD_DEVICE_LOCKED;
@@ -303,24 +322,16 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
                     crc = crc32(0xFFFFFFFF, ramBuffer, count);
                     if (crc == streamToUIn32(data + 3 + 4 + 4))
                     {
-                        if (count > 1024)
-                        {
-                            count = 4096;
+                        count = 2048;	// fixed page size 2K for STM32F303 or STM32G071
+                        HAL_FLASH_Unlock();
+                        for (unsigned int i = 0; i < count; i+=8) {	// 8 = doubleword = 2*32bit = 4*16bit
+                        	uint64_t wordToWrite = *((uint64_t *) ramBuffer + i/8);
+							if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, address + i, wordToWrite) != HAL_OK) {
+								lastError = UPD_FLASH_ERROR;
+								break;
+							}
                         }
-                        else if (count > 512)
-                        {
-                            count = 1024;
-                        }
-                        else if (count > 256)
-                        {
-                            count = 512;
-                        }
-                        else
-                        {
-                            count = 256;
-                        }
-                        lastError = iapProgram((byte *) address, ramBuffer,
-                                count);
+                        HAL_FLASH_Lock();
                     }
                     else
                         lastError = UDP_CRC_ERROR;
@@ -335,20 +346,40 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
             sendLastError = true;
             break;
         case UPD_UPDATE_BOOT_DESC:
-            if (deviceLocked == DEVICE_UNLOCKED && data[7] < 2)	// TODO this check is probably wrong in combination with updater v0.2
+            if (deviceLocked == DEVICE_UNLOCKED)	// TODO this check is probably wrong in combination with updater v0.2
             {
-                crc = crc32(0xFFFFFFFF, ramBuffer, 256);
-                address = FIRST_SECTOR - (1 + data[7]) * BOOT_BLOCK_SIZE; // start address of the descriptor block
-                if (crc == streamToUIn32(data + 3))
+            	count = streamToUIn32(data + 3);
+                crc = crc32(0xFFFFFFFF, ramBuffer, count);
+                //address = FIRST_SECTOR - (1 + data[7]) * BOOT_BLOCK_SIZE; // start address of the descriptor block
+                address = FIRST_SECTOR - BOOT_BLOCK_SIZE;	// one 2kB page before first available application address
+                if (crc == streamToUIn32(data + 3 + 4))
                 {
                     if (checkApplication((AppDescriptionBlock *) ramBuffer))
                     {
-						lastError = iapErasePage(BOOT_BLOCK_PAGE - data[7]);
-						if (lastError == IAP_SUCCESS)
-						{
-							lastError = iapProgram((byte *) address, ramBuffer,
-									256);
+                    	FLASH_EraseInitTypeDef  pEraseInit;
+						HAL_StatusTypeDef       status = HAL_OK;
+						uint32_t PageError = 0;
+
+						pEraseInit.NbPages = 1;
+						pEraseInit.PageAddress = address;
+						pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;
+
+						HAL_FLASH_Unlock();
+
+						status = HAL_FLASHEx_Erase(&pEraseInit, &PageError);
+
+						if (status == HAL_OK) {
+							for (int i = 0; i < 256; i+=8) {	// 8 = doubleword = 2*32bit = 4*16bit
+	                        	uint64_t wordToWrite = *((uint64_t *) ramBuffer + i/8);
+								if (HAL_FLASH_Program(FLASH_TYPEPROGRAM_DOUBLEWORD, address + i, wordToWrite) != HAL_OK) {
+									lastError = UPD_FLASH_ERROR;
+									break;
+								}
+							}
+						} else {
+							lastError = UPD_ERASE_FAILED;
 						}
+						HAL_FLASH_Lock();
                     }
                     else
                         lastError = UPD_APPLICATION_NOT_STARTABLE;

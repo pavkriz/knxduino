@@ -15,7 +15,7 @@ KNXduino Updater 0.3
 
 # Usage
 
-	usage: knxduino-updater-1.0-SNAPSHOT-all.jar [options] <host|port> -fileName <filename.bin> -device <KNX device address>
+	usage: knxduino-updater-1.0-SNAPSHOT-all.jar [options] <host|port> -fileName <filename.hex> -device <KNX device address>
 
 	options:
 	 -help -h                 show this help message
@@ -30,7 +30,6 @@ KNXduino Updater 0.3
 	 -medium -m <id>          KNX medium [tp0|tp1|p110|p132|rf] (default tp1)
 	 -progDevice -p           KNX device address used for programming (default 15.15.192)
 	 -device <knxid>          KNX device address in normal operating mode (default none)
-	 -startAddress <hex/dec>  start address in flash memory of selfbus device
 	 -appVersionPtr <hex/dev> pointer to APP_VERSION string
 	 -uid <hex>               send UID to unlock (default: request UID to unlock)
 
@@ -38,4 +37,4 @@ KNXduino Updater 0.3
 To be used like this:
 
 
-	java -jar knxduino-updater-1.0-SNAPSHOT-all.jar -nat <ip address of KNX/IP GW> -fileName "in16-bim112.bin" -appVersionPtr 0x3263 -startAddress 0x2000 -uid 05:B0:01:02:E9:80:AC:AE:E9:07:47:55
+	java -jar knxduino-updater-1.0-SNAPSHOT-all.jar -nat <ip address of KNX/IP GW> -fileName "in16-bim112.hex" -appVersionPtr 0x3263 -uid 05:B0:01:02:E9:80:AC:AE:E9:07:47:55

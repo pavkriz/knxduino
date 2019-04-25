@@ -1,8 +1,6 @@
 package org.hkfree.knxduino.updater;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -12,6 +10,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.CRC32;
 
+import cz.jaybee.intelhex.Parser;
+import cz.jaybee.intelhex.Region;
+import cz.jaybee.intelhex.listeners.BinWriter;
+import cz.jaybee.intelhex.listeners.RangeDetector;
 import tuwien.auto.calimero.IndividualAddress;
 import tuwien.auto.calimero.KNXException;
 import tuwien.auto.calimero.KNXFormatException;
@@ -220,9 +222,7 @@ public class Updater implements Runnable {
                     throw new KNXIllegalArgumentException("KNX device "
                             + e.toString(), e);
                 }
-            } else if (isOption(arg, "-startAddress", "-a"))
-                options.put("startAddress", Integer.decode(args[++i]));
-            else if (isOption(arg, "-appVersionPtr", ""))
+            } else if (isOption(arg, "-appVersionPtr", ""))
                 options.put("appVersionPtr", Integer.decode(args[++i]));
             else if (isOption(arg, "-fileName", "-f"))
                 options.put("fileName", args[++i]);
@@ -298,7 +298,7 @@ public class Updater implements Runnable {
         final StringBuffer sb = new StringBuffer();
         sb.append(tool).append(sep).append(sep);
         sb.append("usage: KNXduino-updater.jar")
-                .append(" [options] <host|port> -fileName <filename.bin> -device <KNX device address>")
+                .append(" [options] <host|port> -fileName <filename.hex> -device <KNX device address>")
                 .append(sep).append(sep);
         sb.append("options:").append(sep);
         sb.append(" -help -h                 show this help message")
@@ -329,9 +329,6 @@ public class Updater implements Runnable {
         sb.append(
                 " -device <knxid>          KNX device address in normal operating mode (default none)")
                 .append(sep);
-        sb.append(
-                " -startAddress <hex/dec>  start address in flash memory of KNXduino device")
-                .append(sep);
         sb.append(" -appVersionPtr <hex/dev> pointer to APP_VERSION string")
                 .append(sep);
         sb.append(
@@ -361,7 +358,7 @@ public class Updater implements Runnable {
         }
     }
 
-    public static final int UPD_ERASE_SECTOR = 0;
+    public static final int UPD_ERASE_PAGES = 0;
     public static final int UPD_SEND_DATA = 1;
     public static final int UPD_PROGRAM = 2;
     public static final int UPD_UPDATE_BOOT_DESC = 3;
@@ -414,14 +411,14 @@ public class Updater implements Runnable {
     // not yet
     // implemented
 
-    public static final int FLASH_SECTOR_SIZE = 4096;
+    public static final int FLASH_PAGE_SIZE = 2048;
 
     int streamToInteger(byte[] stream, int offset) {
         return (stream[offset + 3] << 24) | (stream[offset + 2] << 16)
                 | (stream[offset + 1] << 8) | stream[offset + 0];
     }
 
-    void integerToStream(byte[] stream, int offset, int val) {
+    void integerToStream(byte[] stream, int offset, long val) {
         stream[offset + 3] = (byte) (val >> 24);
         stream[offset + 2] = (byte) (val >> 16);
         stream[offset + 1] = (byte) (val >> 8);
@@ -498,14 +495,12 @@ public class Updater implements Runnable {
         Exception thrown = null;
         boolean canceled = false;
         KNXNetworkLink link = null;
-        FileInputStream fis = null;
 
         try {
             UpdatableManagementClientImpl mc;
             Destination pd;
             String fName = "";
             int appVersionAddr = 0;
-            int startAddress = 0x2000;
             IndividualAddress progDevice = new IndividualAddress(15, 15, 192);
             IndividualAddress device = null;
             byte uid[] = null;
@@ -520,9 +515,6 @@ public class Updater implements Runnable {
 
             if (options.containsKey("progDevice")) {
                 progDevice = (IndividualAddress) options.get("progDevice");
-            }
-            if (options.containsKey("startAddress")) {
-                startAddress = (int) options.get("startAddress");
             }
             if (options.containsKey("device")) {
                 device = (IndividualAddress) options.get("device");
@@ -577,29 +569,55 @@ public class Updater implements Runnable {
                 throw new RuntimeException("KNXduino udpate failed.");
             }
 
-            fis = new FileInputStream(fName);
+            FileInputStream hexFis = new FileInputStream(fName);
+
+            // init parser
+            Parser parser = new Parser(hexFis);
+
+            // 1st iteration - calculate maximum output range
+            RangeDetector rangeDetector = new RangeDetector();
+            parser.setDataListener(rangeDetector);
+            parser.parse();
+            hexFis.getChannel().position(0);
+            Region outputRegion = rangeDetector.getFullRangeRegion();
+            long startAddress = outputRegion.getAddressStart();
+
+            // 2nd iteration - actual write of the output
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            BinWriter writer = new BinWriter(outputRegion, os, false);
+            parser.setDataListener(writer);
+            parser.parse();
+            byte[] binData = os.toByteArray();
+            int totalLength = binData.length;
+            ByteArrayInputStream fis = new ByteArrayInputStream(binData);
+            System.out.println("Hex file parsed: starting at 0x" + Long.toHexString(startAddress) + ", length " + totalLength
+                    + " bytes");
+
+            try (FileOutputStream fos = new FileOutputStream("dump.bin")) {
+                fos.write(binData);
+            }
+
+            //System.exit(0);
 
             byte[] buf = new byte[12];
             int nRead = 0;
             int total = 0;
-            int totalLength = fis.available();
             if (true) {
-                int eraseSectors = (totalLength / FLASH_SECTOR_SIZE) + 1;
-                int startSector = startAddress / FLASH_SECTOR_SIZE;
-                byte[] sector = new byte[1];
-                for (int i = 0; i < eraseSectors; i++) {
-                    sector[0] = (byte) (i + startSector);
-                    System.out.print("Erase sector " + sector[0] + " ...");
-                    result = mc.sendUpdateData(pd, UPD_ERASE_SECTOR, sector);
-                    if (checkResult(result) != 0) {
-                        mc.restart(pd);
-                        throw new RuntimeException("KNXduino udpate failed.");
-                    }
+                int erasePages = (totalLength / FLASH_PAGE_SIZE) + 1;
+                long startPage = startAddress / FLASH_PAGE_SIZE;
+                byte[] metaData = new byte[2];
+                metaData[0] = (byte) (startPage);
+                metaData[1] = (byte) (erasePages);
+                System.out.print("Erase " + erasePages + " pages starting from page " + startPage + " ...");
+                result = mc.sendUpdateData(pd, UPD_ERASE_PAGES, metaData);
+                if (checkResult(result) != 0) {
+                    mc.restart(pd);
+                    throw new RuntimeException("KNXduino udpate failed.");
                 }
             }
             CRC32 crc32Block = new CRC32();
             int progSize = 0;
-            int progAddress = startAddress;
+            long progAddress = startAddress;
             boolean doProg = false;
             if (true) {
                 System.out.println("Sending application data (" + totalLength
@@ -608,8 +626,8 @@ public class Updater implements Runnable {
                     int txSize;
                     int nDone = 0;
                     while (nDone < nRead) {
-                        if ((progSize + nRead) > FLASH_SECTOR_SIZE) {
-                            txSize = FLASH_SECTOR_SIZE - progSize;
+                        if ((progSize + nRead) > FLASH_PAGE_SIZE) {
+                            txSize = FLASH_PAGE_SIZE - progSize;
                             doProg = true;
                         } else {
                             txSize = nRead - nDone;
@@ -645,7 +663,7 @@ public class Updater implements Runnable {
                             System.out.println();
                             System.out
                                     .print("Program device at flash address 0x"
-                                            + Integer.toHexString(progAddress)
+                                            + Long.toHexString(progAddress)
                                             + " with " + progSize
                                             + " bytes and CRC32 0x"
                                             + Long.toHexString(crc) + " ... ");
@@ -667,25 +685,20 @@ public class Updater implements Runnable {
                         + " bytes from file to device.");
                 Thread.sleep(1000);
             }
-            fis = new FileInputStream(fName);
-            totalLength = fis.available();
             CRC32 crc32File = new CRC32();
-            byte buffer[] = new byte[totalLength];
-            fis.read(buffer);
-            fis.close();
-            crc32File.update(buffer, 0, totalLength);
+            crc32File.update(binData, 0, totalLength);
 
             byte bootDescriptor[] = new byte[16];
-            int endAddress = startAddress + totalLength;
+            long endAddress = startAddress + totalLength;
             integerToStream(bootDescriptor, 0, startAddress);
             integerToStream(bootDescriptor, 4, endAddress);
             integerToStream(bootDescriptor, 8, (int) crc32File.getValue());
             integerToStream(bootDescriptor, 12, appVersionAddr);
             System.out
                     .println("Preparing boot descriptor with start address 0x"
-                            + Integer.toHexString(startAddress)
+                            + Long.toHexString(startAddress)
                             + " end address 0x"
-                            + Integer.toHexString(endAddress)
+                            + Long.toHexString(endAddress)
                             + " with CRC32 0x"
                             + Long.toHexString(crc32File.getValue())
                             + " APP_VERSION pointer 0x"
@@ -748,12 +761,6 @@ public class Updater implements Runnable {
         } finally {
             if (link != null)
                 link.close();
-            try {
-                fis.close();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
             onCompletion(thrown, canceled);
         }
     }
