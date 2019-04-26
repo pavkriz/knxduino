@@ -162,7 +162,6 @@
 							<tool id="com.atollic.truestudio.exe.release.toolchain.gcc.1933294508" name="C Compiler" superClass="com.atollic.truestudio.exe.release.toolchain.gcc">
 								<option id="com.atollic.truestudio.gcc.symbols.defined.360587673" name="Defined symbols" superClass="com.atollic.truestudio.gcc.symbols.defined" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="STM32F303xE"/>
-									<listOptionValue builtIn="false" value="DUMP_TELEGRAMS"/>
 									<listOptionValue builtIn="false" value="IS_BOOTLOADER"/>
 								</option>
 								<option id="com.atollic.truestudio.gcc.directories.select.782342718" name="Include path" superClass="com.atollic.truestudio.gcc.directories.select" useByScannerDiscovery="false" valueType="includePath">
@@ -192,7 +191,6 @@
 							<tool id="com.atollic.truestudio.exe.release.toolchain.gpp.413964768" name="C++ Compiler" superClass="com.atollic.truestudio.exe.release.toolchain.gpp">
 								<option id="com.atollic.truestudio.gpp.symbols.defined.441161554" name="Defined symbols" superClass="com.atollic.truestudio.gpp.symbols.defined" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="STM32F303xE"/>
-									<listOptionValue builtIn="false" value="DUMP_TELEGRAMS"/>
 									<listOptionValue builtIn="false" value="IS_BOOTLOADER"/>
 								</option>
 								<option id="com.atollic.truestudio.gpp.directories.select.92424881" name="Include path" superClass="com.atollic.truestudio.gpp.directories.select" useByScannerDiscovery="false" valueType="includePath">

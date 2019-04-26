@@ -1,6 +1,6 @@
 {
-    "board": "STM32:stm32:Nucleo_64",
-    "configuration": "pnum=NUCLEO_F303RE,upload_method=STLink,xserial=generic,usb=none,opt=ogstd",
+    "board": "knxduino:stm32:knxduino",
+    "configuration": "pnum=knxduino_NUCLEO_F303RE,opt=osstd",
     "sketch": "knxduino.ino",
     "port": "/dev/ttyACM0",
     "output": "build"

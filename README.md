@@ -16,22 +16,33 @@
 
 Testing IDE: [Visual Studio Code](https://code.visualstudio.com/) + [Arduino plugin](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino) + [Cortex-Debug plugin](https://marketplace.visualstudio.com/items?itemName=marus25.cortex-debug)
 
+or Arduino IDE 1.8.5.
+
 Testing Arduino Core: Additional URL https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json version 1.3.0
 
-Currently compiles to 31732 bytes of Flash (no bootloader used yet). Thus perfectly OK for 128kB devices.
+"Blink KNX actuator" sketch currently compiles to approx 28072 bytes of Flash (without bootloader, size-optimized, hard-coded addresses, no EEPROM emulation thus not configurable at all). Bootloader is currently approx. 9kB. Thus perfectly OK for 128kB devices.
 
-### Bootloader
+### Development Environment for Bootloader
 
 Use Atollic TrueSTUDIO for STM32
 
-## Known issues and steps to make it work
+## Steps to compile application (sketch)
 
-* Copy `misc/boards.local.txt` to the folder, where STM32duino Core is installed (eg. `/home/pavkriz/.arduino15/packages/STM32/hardware/stm32/1.3.0/`)
+* Copy `hardware` folder to your sketches folder (eg. `~/Arduino`)
+* Select `KNXdunino` board, and `KNXduino Nucleo F303RE with 32kB bootloader` in your IDE (eg. vscode or Arduino IDE)
+* Optional: Select `Optimize` menu according to your preferences
+
+## Known issues in vscode
+
 * Fix hardcoded `arduinoPath` path in `.vscode/c_cpp_properties.json` file
 * Fix hardcoded `cortex-debug.openocdPath` path in `.vscode/settings.json` file
 * Fix hardcoded `cortex-debug.armToolchainPath` path in `.vscode/settings.json` file
 * Fix hardcoded path to `stm32f3discovery.cfg` in `.vscode/launch.json` file
 * `Arduino: Upload` command does not work because of `output` option in `.vscode/arduino.json` file. Use `Arduino: Verify` followed by `Debug: Continue (F5)` instead.
+
+## Steps to compile bootloader
+
+Use Atollic TrueSTUDIO for STM32, open and build `bootloader` project.
 
 ## TODO
 

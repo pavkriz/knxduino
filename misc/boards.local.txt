@@ -1,3 +1,0 @@
-# NUCLEO_F303RE board
-# enable Comparator HAL module
-Nucleo_64.menu.pnum.NUCLEO_F303RE.build.extra_flags=-D{build.product_line} {build.enable_usb} {build.xSerial} -DHAL_COMP_MODULE_ENABLED
