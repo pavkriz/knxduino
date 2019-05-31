@@ -34,7 +34,7 @@
     version.
 */
 
-package org.hkfree.knxduino.updater;
+package org.hkfree.knxduino.updater.tests;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;

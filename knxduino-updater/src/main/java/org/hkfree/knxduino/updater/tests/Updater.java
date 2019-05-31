@@ -1,4 +1,4 @@
-package org.hkfree.knxduino.updater;
+package org.hkfree.knxduino.updater.tests;
 
 import java.io.*;
 import java.net.InetAddress;
