@@ -5,12 +5,44 @@
 
 #ifdef DUMP_TELEGRAMS
 
+static uint8_t TxBuffer[TXBUFSIZE];
+static uint32_t TxHead = 0;
+static uint32_t TxTail = 0;	// first empty byte in buffer
+
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_uart2_tx;
+
 
 /* UART2 Interrupt Service Routine */
 void USART2_IRQHandler(void)
 {
   HAL_UART_IRQHandler(&huart2);
+}
+
+
+//Transmits data from Tx circular buffer either in one part if data is linear or in two parts if data is broken by circular buffers end.
+static void TransmitTxBuffer(void){
+
+    HAL_NVIC_DisableIRQ(USART2_IRQn);                                            //DMA interrupt must be disabled - if transfer is complete immediately (one byte only, DMA transmit function invokes interrupt before tail position is updated)
+    if( (TxHead != TxTail) && huart2.gState == HAL_UART_STATE_READY) {                                                        //If there is data to transfer and no tranmission in progress
+        if( TxHead > TxTail ){                                                    //If all data in circular buffer is linear
+            if( HAL_UART_Transmit_IT(&huart2, TxBuffer + TxTail , TxHead - TxTail) == HAL_OK ){
+                TxTail = TxHead;                                                //Transmit all data and move tail to head position
+            }
+        }
+        else{                                                                    //If data is separated by circular buffer end
+            if( HAL_UART_Transmit_IT(&huart2, TxBuffer + TxTail , TXBUFSIZE - TxTail) == HAL_OK ){
+                TxTail = 0;                                                        //Transmit first end of buffer data part and then linear part from beginning of circular buffer
+            }
+        }
+    }
+    HAL_NVIC_EnableIRQ(USART2_IRQn);
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
+    if( huart == &huart2 ){
+        TransmitTxBuffer();
+    }
 }
 
 #endif
@@ -23,7 +55,16 @@ void UART2_printf(const char *fmt, ...) {
 	va_start(args, fmt);
 	vsprintf(textbuf, fmt, args);
 	va_end(args);
-	HAL_UART_Transmit(&huart2,textbuf, strlen(textbuf), 500); // ms timeout
+	//HAL_UART_Transmit(&huart2,textbuf, strlen(textbuf), 500); // ms timeout
+
+	uint32_t i;
+
+	for( i=0; i<strlen(textbuf); i++ ){
+		TxBuffer[ TxHead++ ] = textbuf[i];
+		TxHead &= TXBUFHEADMASK;
+	}
+
+	TransmitTxBuffer();
 #endif
 }
 
