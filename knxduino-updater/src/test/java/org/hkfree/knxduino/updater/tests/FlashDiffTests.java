@@ -42,6 +42,7 @@ public class FlashDiffTests {
         URL url2 = Thread.currentThread().getContextClassLoader().getResource("knxduino.ino.slto.v2.hex");
         BinImage img1 = BinImage.readFromHex(url1.getPath());
         BinImage img2 = BinImage.readFromHex(url2.getPath());
+        performTest(img1, img2);
     }
 
     @Test

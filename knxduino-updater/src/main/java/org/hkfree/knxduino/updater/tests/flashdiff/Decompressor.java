@@ -2,6 +2,10 @@ package org.hkfree.knxduino.updater.tests.flashdiff;
 
 import java.util.Arrays;
 
+/**
+ * Apply diff stream and produce one page to be flashed
+ * (based on diff stream, original ROM content, and RAM buffer to store some latest ROM pages already flashed)
+ */
 public class Decompressor {
 
     private enum State {

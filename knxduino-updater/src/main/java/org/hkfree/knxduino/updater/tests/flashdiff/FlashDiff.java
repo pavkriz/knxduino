@@ -122,7 +122,7 @@ public class FlashDiff {
             //SearchResult rBackwardRamWindow = letLongestCommonBytes(img1.getBinData(), img2.getBinData(), i, 0);  // in case we would have two flash banks, ie. full old image available
             int currentPage = i / FlashPage.PAGE_SIZE;
             int firstAddressInThisPage = currentPage * FlashPage.PAGE_SIZE;
-            SearchResult rForwardOldFlash = letLongestCommonBytes(img1.getBinData(), img2.getBinData(), i, firstAddressInThisPage, MAX_COPY_LENGTH);
+            SearchResult rForwardOldFlash = letLongestCommonBytes(img1.getBinData(), img2.getBinData(), i, 0, MAX_COPY_LENGTH);
             rForwardOldFlash.sourceType = SourceType.FORWARD_ROM;
             // which result is better, from FORWARD ROM or BACKWARD RAM?
             SearchResult bestResult = (rForwardOldFlash.length > rBackwardRamWindow.length) ? rForwardOldFlash : rBackwardRamWindow;
