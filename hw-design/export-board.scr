@@ -1,0 +1,10 @@
+DISPLAY ALL
+RATSNEST
+DISPLAY None 
+DISPLAY Bottom Pads Vias bPlace bNames bDocu Measures
+EXPORT IMAGE knxduino-one/gen/bottom.png 600;
+DISPLAY None 
+DISPLAY Top Pads Vias tPlace tNames tDocu Measures
+EXPORT IMAGE knxduino-one/gen/top.png 600;
+DISPLAY Top Unrouted Dimension tPlace bPlace 
+QUIT
