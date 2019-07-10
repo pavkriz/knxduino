@@ -1,7 +1,7 @@
 {
     "board": "knxduino:stm32:knxduino",
-    "configuration": "pnum=knxduino_NUCLEO_F303RE,opt=ogstd,upload_method=STLink",
+    "configuration": "pnum=knxduino_ONE,opt=ogstd,upload_method=STLink,xserial=none",
     "sketch": "knxduino.ino",
-    "port": "/dev/ttyACM0",
+    "port": "/dev/ttyACM1",
     "output": "build"
 }

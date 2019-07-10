@@ -1,6 +1,9 @@
 menu.pnum=Board variant
 
+menu.xserial=U(S)ART support
+
 menu.opt=Optimize
+menu.rtlib=C Runtime Library
 menu.upload_method=Upload method
 
 knxduino.name=KNXduino
@@ -36,6 +39,20 @@ knxduino.menu.pnum.knxduino_NUCLEO_F303RE.build.variant=KNXDUINO_NUCLEO_F303RE
 knxduino.menu.pnum.knxduino_NUCLEO_F303RE.build.cmsis_lib_gcc=arm_cortexM4l_math
 knxduino.menu.pnum.knxduino_NUCLEO_F303RE.build.extra_flags=-D{build.product_line} {build.enable_usb} {build.xSerial} -DHAL_COMP_MODULE_ENABLED
 
+# KNXDUINO ONE STM32G071 board
+
+knxduino.menu.pnum.knxduino_ONE=KNXduino One without bootloader
+knxduino.menu.pnum.knxduino_ONE.node=KNXDUINO_NODE_ONE
+knxduino.menu.pnum.knxduino_ONE.upload.maximum_size=131072
+knxduino.menu.pnum.knxduino_ONE.upload.maximum_data_size=32768
+knxduino.menu.pnum.knxduino_ONE.build.mcu=cortex-m0plus
+knxduino.menu.pnum.knxduino_ONE.build.board=KNXDUINO_ONE
+knxduino.menu.pnum.knxduino_ONE.build.series=STM32G0xx
+knxduino.menu.pnum.knxduino_ONE.build.product_line=STM32G071xx
+knxduino.menu.pnum.knxduino_ONE.build.variant=KNXDUINO_ONE
+knxduino.menu.pnum.knxduino_ONE.build.cmsis_lib_gcc=arm_cortexM0l_math
+knxduino.menu.pnum.knxduino_ONE.build.extra_flags=-D{build.product_line} {build.enable_usb} {build.xSerial} -DHAL_COMP_MODULE_ENABLED -D__CORTEX_SC=0
+
 knxduino.menu.opt.notset=Undefined (default)
 knxduino.menu.opt.osstd=Smallest (-Os)
 knxduino.menu.opt.osstd.build.flags.optimize=-Os
@@ -59,3 +76,9 @@ knxduino.menu.opt.ogstd.build.flags.optimize=-g -Og
 knxduino.menu.upload_method.STLink=STLink
 knxduino.menu.upload_method.STLink.upload.protocol=STLink
 knxduino.menu.upload_method.STLink.upload.tool=stlink_upload
+
+knxduino.menu.xserial.generic=Enabled (generic 'Serial')
+knxduino.menu.xserial.none=Enabled (no generic 'Serial')
+knxduino.menu.xserial.none.build.xSerial=-DHAL_UART_MODULE_ENABLED -DHWSERIAL_NONE
+knxduino.menu.xserial.disabled=Disabled (no Serial support)
+knxduino.menu.xserial.disabled.build.xSerial=

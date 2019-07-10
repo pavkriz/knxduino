@@ -1,15 +1,16 @@
-# KNXduino - KNX bus compatible DIY device based on STM32F303 MCU with Arduino flavour
+# KNXduino - KNX bus compatible DIY device based on STM32G071 MCU with Arduino flavour
 
-* This project is based on [Selfbus project](http://www.selfbus.org)
+## Testing Boards
 
-## Testing Board
+* DEPRECATED (will be replaced by STM32G0 Nucleo board): [Nucleo-F303RE](https://www.st.com/en/evaluation-tools/nucleo-f303re.html)
+    * Connections:
+        * KNX RX voltage divider 33k:2k -> PB0 (COMP4_INP)
+        * PB1 (COMP4_OUT) -> PA6 (TIM3_CH1)
+        * PA7 (TIM3_CH2) -> TX MOSFET (shorting 68R to GND, 10k pull-down on gate)
+        * KNX- <-> GND
 
-* [Nucleo-F303RE](https://www.st.com/en/evaluation-tools/nucleo-f303re.html)
-* Connections:
-    * KNX RX voltage divider 33k:2k -> PB0 (COMP4_INP)
-    * PB1 (COMP4_OUT) -> PA6 (TIM3_CH1)
-    * PA7 (TIM3_CH2) -> TX MOSFET (shorting 68R to GND, 10k pull-down on gate)
-    * KNX- <-> GND
+* [KNXduino One](hw-design/knxduino-one/)
+    * Note: make sure to connect NRST along with SWO, SWD and GND to JLINK while using OpenOCD
 
 ## Development Environment
 
@@ -40,14 +41,24 @@ Use Atollic TrueSTUDIO for STM32
 * Fix hardcoded path to `stm32f3discovery.cfg` in `.vscode/launch.json` file
 * `Arduino: Upload` command does not work because of `output` option in `.vscode/arduino.json` file. Use `Arduino: Verify` followed by `Debug: Continue (F5)` instead.
 
+Note on building OpenOCD for STM32G0: 
+* `git clone --recurse-submodules https://repo.or.cz/openocd.git`
+* patch http://openocd.zylin.com/gitweb?p=openocd.git;a=patch;h=dcec354bfc756c4a4e1034c9461b5d3f4e55a63e
+* `./bootstrap`
+* `./configure --disable-werror`
+* `make`
+* make sure you've uninstalled package-managed openocd from system (`sudo apt-get remove openocd`)
+* `sudo make install`
+
 ## Steps to compile bootloader
 
 Use Atollic TrueSTUDIO for STM32, open and build `bootloader` project.
 
 ## TODO
 
-* Migrate to PlatformIO.org when it will fully support official ST's STM32duino Core (which we use here). PlatformIO.org has much better build and dependency management (configurable preprocessor defines, local references to particular Arduino Core, libraries,...). Watch https://github.com/platformio/platform-ststm32/issues/76
+* ? Migrate to PlatformIO.org when it will fully support official ST's STM32duino Core (which we use here). PlatformIO.org has much better build and dependency management (configurable preprocessor defines, local references to particular Arduino Core, libraries,...). Watch https://github.com/platformio/platform-ststm32/issues/76
 
 ## Acknowledgement
 
-This work is supported by [hkfree.org](http://www.hkfree.org) community network.
+* This project is based on [Selfbus project](http://www.selfbus.org).
+* This work is supported by [hkfree.org](http://www.hkfree.org) community network.

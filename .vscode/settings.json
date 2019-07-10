@@ -1,5 +1,5 @@
 {
-    "cortex-debug.openocdPath": "/home/pavkriz/.platformio/packages/tool-openocd/bin/openocd",
+    //"cortex-debug.openocdPath": "/home/pavkriz/.platformio/packages/tool-openocd/bin/openocd",
     "cortex-debug.armToolchainPath": "/home/pavkriz/.platformio/packages/toolchain-gccarmnoneeabi/bin/",
     "C_Cpp.intelliSenseEngine": "Default",
     "C_Cpp.clang_format_fallbackStyle": "WebKit",

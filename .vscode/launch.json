@@ -12,45 +12,89 @@
             "type": "cortex-debug",
             "servertype": "openocd",
             "configFiles": [
-                "/home/pavkriz/.platformio/packages/tool-openocd/scripts/board/stm32f3discovery.cfg"
+                "/usr/local/share/openocd/scripts/board/st_nucleo_g0.cfg"
             ],
-            "device": "STM32F303RE",
-            "showDevDebugOutput": false
+            "device": "STM32G071KB",
+            "showDevDebugOutput": true
         },
-        {
-            "name": "Arduino",
-            "type": "arduino",
-            "request": "launch",
-            "program": "${file}",
-            "cwd": "${workspaceFolder}",
-            "MIMode": "gdb",
-            "targetArchitecture": "arm",
-            "miDebuggerPath": "/home/pavkriz/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb",
-            "debugServerPath": "/home/pavkriz/.platformio/packages/tool-openocd/bin/openocd",
-            "debugServerArgs": "-f /home/pavkriz/.platformio/packages/tool-openocd/scripts/board/stm32f3discovery.cfg",
-            "xxxcustomLaunchSetupCommands": [],
-            "customLaunchSetupCommands": [
-                {
-                    "text": "target remote localhost:3333"
-                },
-                {
-                    "text": "file \"${file}\""
-                },
-                {
-                    "text": "load"
-                },
-                {
-                    "text": "monitor reset halt"
-                },
-                {
-                    "text": "monitor reset init"
-                }
-            ],
-            "stopAtEntry": true,
-            "serverStarted": "Info\\ :\\ [\\w\\d\\.]*:\\ hardware",
-            "launchCompleteCommand": "exec-continue",
-            "filterStderr": true,
-            "args": []
-        }
+        // {
+        //     "cwd": "${workspaceRoot}",
+        //     "executable": "./build/knxduino.ino.elf",
+        //     "name": "Debug Microcontroller",
+        //     "request": "launch",
+        //     "type": "cortex-debug",  // Cortex Debug extension
+        //     "servertype": "stutil",
+        //     "device": "STM32G071KB",
+        //     "showDevDebugOutput": true
+        // },
+        // {
+        //     "name": "Arduino",
+        //     "type": "cppdbg",
+        //     "request": "launch",
+        //     "logging": {
+        //         "moduleLoad": true,
+        //         "trace": true,
+        //         "engineLogging": true,
+        //         "programOutput": true,
+        //         "exceptions": true
+        //     },
+        //     "serverLaunchTimeout": 10000,
+        //     "filterStderr": true,
+        //     "filterStdout": false,
+        //     "program": "${workspaceFolder}/build/knxduino.ino.elf",
+        //     "cwd": "${workspaceFolder}",
+        //     "environment": [
+        //         {
+        //             "name": "LD_LIBRARY_PATH",
+        //             "value": "/opt/st/stm32cubeide_1.0.1/plugins/com.st.stm32cube.ide.mcu.externaltools.stlink-gdb-server.linux64_1.0.0.201904160814/tools/bin/"
+        //         }
+        //     ],
+        //     "MIMode": "gdb",
+        //     "targetArchitecture": "arm",
+        //     "miDebuggerPath": "/home/pavkriz/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb",
+        //     "debugServerPath": "${workspaceFolder}/gdb_server.sh",
+        //     "xxxcustomLaunchSetupCommands": [],
+        //     "customLaunchSetupCommands": [
+        //         {
+        //             "text": "target remote localhost:61234"
+        //         },
+        //         {
+        //             "text": "file \"./build/knxduino.ino.elf\""
+        //         },
+        //         {
+        //             "text": "load"
+        //         },
+        //         {
+        //             "text": "monitor reset halt"
+        //         },
+        //         {
+        //             "text": "monitor reset init"
+        //         }
+        //     ],
+        //     "stopAtEntry": true,
+        //     //"serverStarted": "Waiting for debugger connection",
+        //     "launchCompleteCommand": "exec-continue",
+        //     "filterStderr": true,
+        //     "args": []
+        // },
+        // {
+        //     "type": "gdb",  // Native Debug extension
+        //     "request": "attach",
+        //     "name": "Attach to gdbserver",
+        //     "executable": "${workspaceFolder}/build/knxduino.ino.elf",
+        //     "target": "localhost:61234",
+        //     "remote": true,
+        //     "cwd": "${workspaceRoot}",
+        //     //"gdbpath": "/home/pavkriz/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gdb",
+        //     "gdbpath": "/opt/st/stm32cubeide_1.0.1/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-arm-embedded.7-2018-q2-update.linux64_1.0.0.201904031358/tools/bin/arm-none-eabi-gdb",
+        //     "autorun": [
+        //         //"target remote localhost:61234",
+        //         //"file \"./build/knxduino.ino.elf\"",
+        //         //"load",
+        //         //"monitor reset halt",
+        //         //"monitor reset init"
+        //         "monitor reset"
+        //     ]
+        // },
     ]
 }
