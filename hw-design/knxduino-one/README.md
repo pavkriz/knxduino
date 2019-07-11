@@ -12,3 +12,7 @@ Custom board with STM32G071 LQFP32 MCU that fits into a [Italtronic Cbox Int H19
 ![top](gen/top.png)
 
 ![bottom](gen/bottom.png)
+
+# Demo
+
+![KNXduino One demo](demo.gif)    

@@ -10,18 +10,20 @@
         * KNX- <-> GND
 
 * [KNXduino One](hw-design/knxduino-one/)
-    * Note: make sure to connect NRST along with SWO, SWD and GND to JLINK while using OpenOCD
+    * Note: make sure to connect NRST along with SWO, SWD and GND to ST-LINK while using OpenOCD
+
+![KNXduino One demo](hw-design/knxduino-one/demo.gif)    
 
 ## Development Environment
 
 
 Testing IDE: [Visual Studio Code](https://code.visualstudio.com/) + [Arduino plugin](https://marketplace.visualstudio.com/items?itemName=vsciot-vscode.vscode-arduino) + [Cortex-Debug plugin](https://marketplace.visualstudio.com/items?itemName=marus25.cortex-debug)
 
-or Arduino IDE 1.8.5.
+or [Arduino IDE 1.8.5](https://www.arduino.cc/en/main/software).
 
-Testing Arduino Core: Additional URL https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json version 1.3.0
+Testing Arduino Core: Additional URL https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json version 1.6.1
 
-"Blink KNX actuator" sketch currently compiles to approx 28072 bytes of Flash (without bootloader, size-optimized, hard-coded addresses, no EEPROM emulation thus not configurable at all). Bootloader is currently approx. 9kB. Thus perfectly OK for 128kB devices.
+"Blink via KNX" sketch currently compiles to approx. 28072 bytes of Flash (without bootloader, size-optimized, without hard-coded addresses, no EEPROM emulation thus not configurable at all yet). Sketch consumes approx. 4mA while powered from KNX bus without any power optimizations. Bootloader is currently approx. 9kB. Thus perfectly OK for 128kB devices.
 
 ### Development Environment for Bootloader
 
@@ -36,9 +38,9 @@ Use Atollic TrueSTUDIO for STM32
 ## Known issues in vscode
 
 * Fix hardcoded `arduinoPath` path in `.vscode/c_cpp_properties.json` file
-* Fix hardcoded `cortex-debug.openocdPath` path in `.vscode/settings.json` file
+* ~~Fix hardcoded `cortex-debug.openocdPath` path in `.vscode/settings.json` file~~ build OpenOCD and install in PATH (see below)
 * Fix hardcoded `cortex-debug.armToolchainPath` path in `.vscode/settings.json` file
-* Fix hardcoded path to `stm32f3discovery.cfg` in `.vscode/launch.json` file
+* Fix hardcoded path to `st_nucleo_g0.cfg` in `.vscode/launch.json` file
 * `Arduino: Upload` command does not work because of `output` option in `.vscode/arduino.json` file. Use `Arduino: Verify` followed by `Debug: Continue (F5)` instead.
 
 Note on building OpenOCD for STM32G0: 
