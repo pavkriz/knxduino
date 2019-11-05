@@ -6,7 +6,9 @@ import cz.jaybee.intelhex.listeners.BinWriter;
 import cz.jaybee.intelhex.listeners.RangeDetector;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 public class BinImage {
@@ -61,6 +63,19 @@ public class BinImage {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static BinImage readFromBin(String filename) {
+        try (FileInputStream hexFis = new FileInputStream(filename)) {
+            byte[] binData = Files.readAllBytes(new File(filename).toPath());
+            return new BinImage(binData, 0, 0);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static BinImage copyFromArray(byte[] byteArray, long startAddress) {
+        return new BinImage(Arrays.copyOf(byteArray, byteArray.length), startAddress, startAddress + byteArray.length);
     }
 
     public static BinImage dummyFilled(int size, int fillByte) {

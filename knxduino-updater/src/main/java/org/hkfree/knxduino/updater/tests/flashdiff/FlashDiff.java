@@ -1,7 +1,13 @@
 package org.hkfree.knxduino.updater.tests.flashdiff;
 
+import tuwien.auto.calimero.KNXRemoteException;
+import tuwien.auto.calimero.KNXTimeoutException;
+import tuwien.auto.calimero.link.KNXLinkClosedException;
+import tuwien.auto.calimero.mgmt.KNXDisconnectException;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.CRC32;
 
 public class FlashDiff {
     private static final int MINIMUM_PATTERN_LENGTH = 6; // less that this is not efficient (metadata would be larger than data)
@@ -108,11 +114,12 @@ public class FlashDiff {
         }
     }
 
-    public void generateDiff(BinImage img1Orig, BinImage img2, FlashProgrammer flashProgrammer) {
+    public void generateDiff(BinImage img1Orig, BinImage img2, FlashProgrammer flashProgrammer) throws InterruptedException, KNXTimeoutException, KNXLinkClosedException, KNXDisconnectException, KNXRemoteException {
         BinImage img1 = new BinImage(img1Orig); // make copy in order to keep img1Orig untouched
         List<Byte> outputDiffStream = new ArrayList<>();
         List<Byte> rawBuffer = new ArrayList<>();
         OldWindow w = new OldWindow();
+        CRC32 crc32Block = new CRC32();
         int i = 0;
         int size = 0;
         int pages = 0;
@@ -128,7 +135,7 @@ public class FlashDiff {
             SearchResult bestResult = (rForwardOldFlash.length > rBackwardRamWindow.length) ? rForwardOldFlash : rBackwardRamWindow;
             if (bestResult.length >= MINIMUM_PATTERN_LENGTH) {
                 size += possiblyFinishRawBuffer(rawBuffer, outputDiffStream);
-                System.out.println(String.format("%08x ", i) + bestResult);
+                //System.out.println(String.format("%08x ", i) + bestResult);
                 i += bestResult.length;
                 size += 5;
                 byte cmdByte = (byte)CMD_COPY;
@@ -158,8 +165,10 @@ public class FlashDiff {
             if (i%FlashPage.PAGE_SIZE == 0) {
                 // passed to new page
                 size += possiblyFinishRawBuffer(rawBuffer, outputDiffStream);
+                crc32Block.reset();
+                crc32Block.update(img2.getBinData(), i - FlashPage.PAGE_SIZE, FlashPage.PAGE_SIZE);
                 //p = new FlashPage(img1.getBinData(), i);
-                flashProgrammer.sendCompressedPage(outputDiffStream);
+                flashProgrammer.sendCompressedPage(outputDiffStream, crc32Block.getValue());
                 outputDiffStream.clear();
                 pages++;
                 // emulate we have loaded the original page from ROM to RAM and written new page to ROM
@@ -169,7 +178,9 @@ public class FlashDiff {
         }
         size += possiblyFinishRawBuffer(rawBuffer, outputDiffStream);
         if (!outputDiffStream.isEmpty()) {
-            flashProgrammer.sendCompressedPage(outputDiffStream);
+            crc32Block.reset();
+            crc32Block.update(img2.getBinData(), img2.getBinData().length - (img2.getBinData().length % FlashPage.PAGE_SIZE), img2.getBinData().length % FlashPage.PAGE_SIZE);
+            flashProgrammer.sendCompressedPage(outputDiffStream, crc32Block.getValue());
         }
         //dumpSideBySide(img1, img2);
         System.out.println("Compressed stream length = " + size);

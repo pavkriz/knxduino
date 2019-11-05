@@ -8,9 +8,10 @@
 #ifndef BCU_UPDATE_H_
 #define BCU_UPDATE_H_
 
-#include <sblib/eib/bcu_base.h>
-#include <sblib/eib/apci.h>
-#include <sblib/internal/variables.h>
+#include <eib.h>
+#include <eib/bcu_base.h>
+#include <eib/apci.h>
+#include <internal/variables.h>
 
 class BcuUpdate: public BcuBase
 {
@@ -47,11 +48,14 @@ protected:
     void sendConControlTelegram(int cmd, int senderSeqNo);
 
     void dumpTelegram();
+
+    void loop() override;
 };
 
 inline bool BcuUpdate::progPinStatus()
 {
     //return progButtonDebouncer.value();
-	return HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+	//return HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_15);
+	return false;
 }
 #endif /* BCU_UPDATE_H_ */

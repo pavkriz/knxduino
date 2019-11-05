@@ -31770,7 +31770,7 @@ Source: www.farnell.com/datasheets/247.pdf</description>
 <part name="C9" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0805" package3d_urn="urn:adsk.eagle:package:23617/2" value="100n"/>
 <part name="R7" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="R-EU_" device="R0805" package3d_urn="urn:adsk.eagle:package:23553/2" value="10k"/>
 <part name="GND19" library="supply1" deviceset="GND" device=""/>
-<part name="D6" library="diode" library_urn="urn:adsk.eagle:library:210" deviceset="DIODE-" device="SOD123" package3d_urn="urn:adsk.eagle:package:43420/1" value="400mA"/>
+<part name="D6" library="diode" library_urn="urn:adsk.eagle:library:210" deviceset="DIODE-" device="SOD123" package3d_urn="urn:adsk.eagle:package:43420/1" value="STPS0540Z 400mA"/>
 <part name="D11" library="diode" deviceset="DIODE-" device="SOD123" value="TS4148"/>
 <part name="DBG" library="SparkFun-Connectors" library_urn="urn:adsk.eagle:library:513" deviceset="CONN_07" device="LOCK" package3d_urn="urn:adsk.eagle:package:38132/1"/>
 <part name="+3V6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
@@ -31968,7 +31968,7 @@ cannot be used as current source</text>
 </instance>
 <instance part="D6" gate="G$1" x="-152.4" y="124.46" smashed="yes" rot="R270">
 <attribute name="NAME" x="-151.765" y="121.92" size="1.778" layer="95" rot="R270"/>
-<attribute name="VALUE" x="-154.305" y="121.92" size="1.778" layer="96" rot="R270"/>
+<attribute name="VALUE" x="-156.083" y="129.286" size="1.778" layer="96" rot="R270"/>
 </instance>
 <instance part="D11" gate="G$1" x="-147.32" y="162.56" smashed="yes">
 <attribute name="NAME" x="-144.78" y="163.0426" size="1.778" layer="95"/>

@@ -8,7 +8,7 @@ extern "C" {
 #define TXBUFSIZE                    1024                                //Must be power of two because of some math magic
 #define TXBUFHEADMASK                ( TXBUFSIZE - 1 )
 
-void UART2_printf(const char *fmt, ...);
+void UART_printf(const char *fmt, ...);
 void serial_setup();
 
 #ifdef __cplusplus

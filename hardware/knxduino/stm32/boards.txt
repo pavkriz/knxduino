@@ -53,6 +53,18 @@ knxduino.menu.pnum.knxduino_ONE.build.variant=KNXDUINO_ONE
 knxduino.menu.pnum.knxduino_ONE.build.cmsis_lib_gcc=arm_cortexM0l_math
 knxduino.menu.pnum.knxduino_ONE.build.extra_flags=-D{build.product_line} {build.enable_usb} {build.xSerial} -DHAL_COMP_MODULE_ENABLED -D__CORTEX_SC=0
 
+knxduino.menu.pnum.knxduino_ONE_BL=KNXduino One with bootloader
+knxduino.menu.pnum.knxduino_ONE_BL.node=KNXDUINO_NODE_ONE_BL
+knxduino.menu.pnum.knxduino_ONE_BL.upload.maximum_size=131072
+knxduino.menu.pnum.knxduino_ONE_BL.upload.maximum_data_size=32768
+knxduino.menu.pnum.knxduino_ONE_BL.build.mcu=cortex-m0plus
+knxduino.menu.pnum.knxduino_ONE_BL.build.board=KNXDUINO_ONE_BL
+knxduino.menu.pnum.knxduino_ONE_BL.build.series=STM32G0xx
+knxduino.menu.pnum.knxduino_ONE_BL.build.product_line=STM32G071xx
+knxduino.menu.pnum.knxduino_ONE_BL.build.variant=KNXDUINO_ONE_BL
+knxduino.menu.pnum.knxduino_ONE_BL.build.cmsis_lib_gcc=arm_cortexM0l_math
+knxduino.menu.pnum.knxduino_ONE_BL.build.extra_flags=-D{build.product_line} {build.enable_usb} {build.xSerial} -DHAL_COMP_MODULE_ENABLED -D__CORTEX_SC=0 -DVECT_TAB_OFFSET=0x8000
+
 knxduino.menu.opt.notset=Undefined (default)
 knxduino.menu.opt.osstd=Smallest (-Os)
 knxduino.menu.opt.osstd.build.flags.optimize=-Os

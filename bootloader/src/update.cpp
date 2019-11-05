@@ -8,9 +8,9 @@
  *  published by the Free Software Foundation.
  */
 
-#include <sblib/eib.h>
-#include <sblib/eib/bus.h>
-#include <sblib/eib/apci.h>
+#include <eib.h>
+#include <eib/bus.h>
+#include <eib/apci.h>
 //#include <sblib/internal/iap.h>
 #include <string.h>
 //#include <sblib/io_pin_names.h>
@@ -18,6 +18,7 @@
 #include <bcu_updater.h>
 #include <crc.h>
 #include <boot_descriptor_block.h>
+#include "Decompressor.h"
 
 //TODO:
 #define IAP_SUCCESS 0
@@ -74,6 +75,8 @@ enum
     UPD_SEND_DATA = 1,
     UPD_PROGRAM = 2,
     UPD_UPDATE_BOOT_DESC = 3,
+    UPD_SEND_DATA_TO_DECOMPRESS = 4,
+    UPD_PROGRAM_DECOMPRESSED_DATA = 5,
     UPD_REQ_DATA = 10,
     UPD_GET_LAST_ERROR = 20,
     UPD_SEND_LAST_ERROR = 21,
@@ -83,6 +86,8 @@ enum
     UPD_APP_VERSION_REQUEST = 33,
     UPD_APP_VERSION_RESPONSE = 34,
     UPD_RESET = 35,
+	UPD_REQUEST_BOOT_DESC = 36,
+	UPD_RESPONSE_BOOT_DESC = 37,
 };
 
 #define DEVICE_LOCKED   ((unsigned int ) 0x5AA55AA5)
@@ -119,6 +124,8 @@ enum UPD_Status
 };
 
 unsigned char ramBuffer[4096];
+
+Decompressor decompressor(FLASH_BASE + 0x8000);	// application base address
 
 /*
  * a direct cast does not work due to possible miss aligned addresses.
@@ -280,7 +287,7 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
                 	uint32_t PageError = 0;
 
                 	pEraseInit.NbPages = pages;
-                	pEraseInit.PageAddress = pageNr*2048;
+                	pEraseInit.Page = pageNr;
                 	pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;
 
                 	HAL_FLASH_Unlock();
@@ -303,6 +310,23 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
                     memcpy((void *) &ramBuffer[ramLocation], data + 3, count);
                     crc = crc32(crc, data + 3, count);
                     ramLocation += count;
+                    lastError = IAP_SUCCESS;
+                }
+                else
+                    lastError = UPD_RAM_BUFFER_OVERFLOW;
+            }
+            else
+                lastError = UPD_DEVICE_LOCKED;
+            sendLastError = true;
+            break;
+        case UPD_SEND_DATA_TO_DECOMPRESS:
+            if (deviceLocked == DEVICE_UNLOCKED)
+            {
+                if ((ramLocation + count) <= sizeof(ramBuffer))
+                {
+                	for (int i = 0; i < count; i++) {
+                		decompressor.putByte(data[i + 3]);
+                	};
                     lastError = IAP_SUCCESS;
                 }
                 else
@@ -345,6 +369,44 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
             crc = 0xFFFFFFFF;
             sendLastError = true;
             break;
+        case UPD_PROGRAM_DECOMPRESSED_DATA:
+            if (deviceLocked == DEVICE_UNLOCKED)
+            {
+                count = decompressor.getBytesCountToBeFlashed();
+                address = decompressor.getStartAddrOfPageToBeFlashed();
+                if (addressAllowedToProgram(address, count))
+                {
+                    crc = decompressor.getCrc32();
+                    if (crc == streamToUIn32(data + 3 + 4 + 4))
+                    {
+                    	FLASH_EraseInitTypeDef  pEraseInit;
+						HAL_StatusTypeDef       status = HAL_OK;
+						uint32_t PageError = 0;
+
+						pEraseInit.NbPages = 1;
+						pEraseInit.Page = decompressor.getFlashPageNumberToBeFlashed();
+						pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;
+
+						HAL_FLASH_Unlock();
+						status = HAL_FLASHEx_Erase(&pEraseInit, &PageError);
+                    	HAL_FLASH_Lock();
+
+                        if (!decompressor.pageCompletedDoFlash()) {
+                        	lastError = UPD_FLASH_ERROR;
+                        }
+                    }
+                    else
+                        lastError = UDP_CRC_ERROR;
+                }
+                else
+                    lastError = UPD_ADDRESS_NOT_ALLOWED_TO_FLASH;
+            }
+            else
+                lastError = UPD_DEVICE_LOCKED;
+            ramLocation = 0;
+            crc = 0xFFFFFFFF;
+            sendLastError = true;
+            break;
         case UPD_UPDATE_BOOT_DESC:
             if (deviceLocked == DEVICE_UNLOCKED)	// TODO this check is probably wrong in combination with updater v0.2
             {
@@ -361,7 +423,7 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
 						uint32_t PageError = 0;
 
 						pEraseInit.NbPages = 1;
-						pEraseInit.PageAddress = address;
+						pEraseInit.Page = address/FLASH_PAGE_SIZE;
 						pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;
 
 						HAL_FLASH_Unlock();
@@ -393,6 +455,22 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
             crc = 0xFFFFFFFF;
             sendLastError = true;
             break;
+        case UPD_REQUEST_BOOT_DESC:
+        	if (deviceLocked == DEVICE_UNLOCKED) {
+        		address = (FIRST_SECTOR - (1 + data[3]) * BOOT_BLOCK_SIZE);
+        		AppDescriptionBlock* bootDescr = (AppDescriptionBlock *) address;
+				if (lastError == IAP_SUCCESS)
+				{
+					*sendTel = _prepareReturnTelegram(12, UPD_RESPONSE_BOOT_DESC);
+					memcpy(bcu.sendTelegram + 10, &(bootDescr->startAddress), 4);
+					memcpy(bcu.sendTelegram + 14, &(bootDescr->endAddress), 4);
+					memcpy(bcu.sendTelegram + 18, &(bootDescr->crc), 4);
+				}
+				break;
+			}
+			else
+				lastError = UPD_DEVICE_LOCKED;
+			break;
         case UPD_REQ_DATA:
             if (deviceLocked == DEVICE_UNLOCKED)
             {
