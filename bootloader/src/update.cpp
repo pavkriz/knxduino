@@ -379,18 +379,6 @@ unsigned char handleMemoryRequests(int apciCmd, bool * sendTel,
                     crc = decompressor.getCrc32();
                     if (crc == streamToUIn32(data + 3 + 4 + 4))
                     {
-                    	FLASH_EraseInitTypeDef  pEraseInit;
-						HAL_StatusTypeDef       status = HAL_OK;
-						uint32_t PageError = 0;
-
-						pEraseInit.NbPages = 1;
-						pEraseInit.Page = decompressor.getFlashPageNumberToBeFlashed();
-						pEraseInit.TypeErase = FLASH_TYPEERASE_PAGES;
-
-						HAL_FLASH_Unlock();
-						status = HAL_FLASHEx_Erase(&pEraseInit, &PageError);
-                    	HAL_FLASH_Lock();
-
                         if (!decompressor.pageCompletedDoFlash()) {
                         	lastError = UPD_FLASH_ERROR;
                         }

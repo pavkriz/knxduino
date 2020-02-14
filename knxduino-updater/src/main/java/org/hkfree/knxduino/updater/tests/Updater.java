@@ -191,6 +191,10 @@ public class Updater implements Runnable {
                 options.put("version", null);
                 return;
             }
+            if (isOption(arg, "-full", null)) {
+                options.put("full", null);
+                return;
+            }
             if (isOption(arg, "-verbose", "-v"))
                 options.put("verbose", null);
             else if (isOption(arg, "-localhost", null))
@@ -340,6 +344,8 @@ public class Updater implements Runnable {
                 .append(sep);
         sb.append(
                 " -uid <hex>               send UID to unlock (default: request UID to unlock)")
+                .append(sep);
+        sb.append(" -full                  force full upload mode (disable diff)")
                 .append(sep);
         LOGGER.log(Level.INFO, sb.toString());
     }
@@ -539,7 +545,7 @@ public class Updater implements Runnable {
 
             link = createLink();
             mc = new UpdatableManagementClientImpl(link);
-            pd = mc.createDestination(progDevice, true);
+
 
             if (device != null) {
                 Destination d;
@@ -551,6 +557,8 @@ public class Updater implements Runnable {
                 }
                 Thread.sleep(1000);
             }
+
+            pd = mc.createDestination(progDevice, true);
 
             if (uid == null) {
                 System.out.print("Request UID... ");
@@ -634,12 +642,10 @@ public class Updater implements Runnable {
             // try find file in cache
             boolean diffMode = false;
             File oldImageCacheFile = new File(hexCacheDir + File.separator + "image-" + Long.toHexString(descrStartAddr) + "-" + descrLength + "-" + Long.toHexString(descrCrc) + ".bin" );
-            if (oldImageCacheFile.exists()) {
+            if (!(options.containsKey("full")) && oldImageCacheFile.exists()) {
                 System.out.println("Olf firmware found in cache (switching to diff upload mode): " + oldImageCacheFile.getAbsolutePath());
                 diffMode = true;
             }
-
-            //System.exit(0);
 
             if (diffMode) {
                 doDiffFlash(mc, pd, startAddress, binData, oldImageCacheFile);

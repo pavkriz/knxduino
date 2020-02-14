@@ -32,7 +32,7 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = 0x20008000;    /* end of RAM */
+_estack = 0x20008000-8;    /* end of RAM minus 2 integers for magic numbers passed between app and bootloader */
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
@@ -40,8 +40,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 32K
-FLASH (rx)      : ORIGIN = 0x8000000+0x8000, LENGTH = 128K-0x8000
+RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 32K-8 /* minus 2 integers for magic numbers passed between app and bootloader */
+FLASH (rx)      : ORIGIN = 0x8000000+0x8000, LENGTH = 128K-0x8000 /* minus bootloader area */
 }
 
 /* Define output sections */

@@ -34,6 +34,7 @@ Use Atollic TrueSTUDIO for STM32
 * Use [KNXduino library](https://github.com/pavkriz/knxduino-library)
 * Copy `hardware` folder to your sketches folder (eg. `~/Arduino`)
 * Select `KNXdunino` board, and `KNXduino Nucleo F303RE with 32kB bootloader` in your IDE (eg. vscode or Arduino IDE)
+* Select `U(S)ART support: Enable (no generic 'Serial')`
 * Optional: Select `Optimize` menu according to your preferences
 
 ## Known issues in vscode

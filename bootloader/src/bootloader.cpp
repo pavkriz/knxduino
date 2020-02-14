@@ -115,7 +115,7 @@ void loop()
         else
             blinky.start(1000);
         HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_15);	// PIN_RUN
-        UART_printf("@ %02X\n", tickNum++);
+        UART_printf("$ %02X\n", tickNum++);
     }
     //digitalWrite(PIN_PROG, digitalRead(PIN_RUN)); // TODO
 }
@@ -167,13 +167,13 @@ int main(void)
 	// disable buffering - worse performance, no Imprecise bus faults
 	uint32_t *ACTLR = (uint32_t *)0xE000E008; *ACTLR = *ACTLR | 2;
 
-    unsigned int * magicWord = (unsigned int *) 0x20000000;	// SRAM start
+    unsigned int * magicWord = (unsigned int *) APP_TO_BOOTLOADER_FLAG_ADDR;
     if (*magicWord == 0x5E1FB055)
     {
         *magicWord = 0;
         run_updater();
     }
-    //*magicWord = 0; // TODO here we accidentally rewrite some random variable allocated at SRAM beginning, not good at all!
+    *magicWord = 0;
 
     // PIN_PROG: Configure PC15 as input (BUTTON), has external pullup
     __HAL_RCC_GPIOC_CLK_ENABLE();

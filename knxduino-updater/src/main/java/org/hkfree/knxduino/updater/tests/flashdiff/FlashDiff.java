@@ -89,7 +89,7 @@ public class FlashDiff {
         if (!rawBuffer.isEmpty()) {
             byte cmdByte = CMD_RAW;
             if (rawBuffer.size() <= MAX_LENGTH_SHORT) {
-                System.out.println("RAW BUFFER SHORT size=" + rawBuffer.size());
+                debug("RAW BUFFER SHORT size=" + rawBuffer.size());
                 cmdByte = (byte)(cmdByte | FLAG_SHORT);
                 cmdByte = (byte)(cmdByte | (rawBuffer.size() & 0b111111));  // command + 6 low bits of the length
                 outputDiffStream.add(cmdByte);
@@ -98,7 +98,7 @@ public class FlashDiff {
                 rawBuffer.clear();
                 return outSize;
             } else {
-                System.out.println("RAW BUFFER LONG size=" + rawBuffer.size());
+                debug("RAW BUFFER LONG size=" + rawBuffer.size());
                 cmdByte = (byte)(cmdByte | FLAG_LONG);
                 cmdByte = (byte)(cmdByte | ((rawBuffer.size() >> 8) & 0b111111));  // command + 6 high bits of the length
                 byte lengthLowByte = (byte)(rawBuffer.size() & 0xff);           // 8 low bits of the length
@@ -141,9 +141,11 @@ public class FlashDiff {
                 byte cmdByte = (byte)CMD_COPY;
                 if (bestResult.length <= MAX_LENGTH_SHORT) {
                     cmdByte = (byte)(cmdByte | FLAG_SHORT | (bestResult.length & 0b111111));  // command + 6 bits of the length
+                    debug("@ b=%02X i=%d CMD_COPY", (cmdByte & 0xff), i);
                     outputDiffStream.add(cmdByte);
                 } else {
                     cmdByte = (byte)(cmdByte | FLAG_LONG | ((bestResult.length >> 8) & 0b111111));  // command + 6 bits from high byte of the length
+                    debug("@ b=%02X i=%d CMD_COPY FLAG_LONG", (cmdByte & 0xff), i);
                     byte lengthLowByte = (byte)(bestResult.length & 0xff); // 8 low bits of the length
                     outputDiffStream.add(cmdByte);
                     outputDiffStream.add(lengthLowByte);
@@ -153,14 +155,29 @@ public class FlashDiff {
                 byte addr2 = (byte)((bestResult.offset >> 8) & 0xff);  // middle byte
                 byte addr3 = (byte)((bestResult.offset >> 16) & 0xff);  // high byte
                 int addrFromFlag = bestResult.sourceType == SourceType.BACKWARD_RAM ? ADDR_FROM_RAM : ADDR_FROM_ROM;
+                if (bestResult.sourceType == SourceType.BACKWARD_RAM) {
+                    debug(" DO COPY FROM RAM l=%d sa=%08X", bestResult.length, bestResult.offset);
+                } else {
+                    debug(" DO COPY FROM ROM l=%d sa=%08X", bestResult.length, bestResult.offset);
+                }
+                byte[] srcData = bestResult.sourceType == SourceType.BACKWARD_RAM ? w.getOldBinData() : img1.getBinData();
+                for (int k = 0; k < bestResult.length; k++) {
+                    if (k % 16 == 0) {
+                        debug("\n  ");
+                    }
+                    debug("%02X ", (srcData[bestResult.offset + k] & 0xff));
+                }
                 addr3 = (byte)(addr3 | addrFromFlag);
                 outputDiffStream.add(addr3);
                 outputDiffStream.add(addr2);
                 outputDiffStream.add(addr1);
+                debug("\n");
             } else {
                 //System.out.println(String.format("%08x RAW: %02x", i, img2.getBinData()[i]));
+                debug("@ b=%02X i=%d raw", (img2.getBinData()[i] & 0xff), i);
                 rawBuffer.add(img2.getBinData()[i]);
                 i++;
+                debug("\n");
             }
             if (i%FlashPage.PAGE_SIZE == 0) {
                 // passed to new page
@@ -168,21 +185,46 @@ public class FlashDiff {
                 crc32Block.reset();
                 crc32Block.update(img2.getBinData(), i - FlashPage.PAGE_SIZE, FlashPage.PAGE_SIZE);
                 //p = new FlashPage(img1.getBinData(), i);
+
+                debug("# FLASH PAGE startAddrOfPageToBeFlashed=%08X", i*FlashPage.PAGE_SIZE);
+                for (int k = pages*FlashPage.PAGE_SIZE; (k < (pages+1)*FlashPage.PAGE_SIZE && k < img2.getBinData().length); k++) {
+                    if (k % 16 == 0) {
+                        debug("\n  ");
+                    }
+                    debug(String.format("%02X ", (img2.getBinData()[k] & 0xff)));
+                }
+                debug("\n");
+
                 flashProgrammer.sendCompressedPage(outputDiffStream, crc32Block.getValue());
                 outputDiffStream.clear();
                 pages++;
                 // emulate we have loaded the original page from ROM to RAM and written new page to ROM
-                w.fillNextPage(img1.getBinData(), i - FlashPage.PAGE_SIZE);
-                System.arraycopy(img2.getBinData(), i - FlashPage.PAGE_SIZE, img1.getBinData(), i - FlashPage.PAGE_SIZE, FlashPage.PAGE_SIZE);
+                w.fillNextPage(img1.getBinData(), i - FlashPage.PAGE_SIZE); // backup old data from ROM to RAM
+                System.arraycopy(img2.getBinData(), i - FlashPage.PAGE_SIZE, img1.getBinData(), i - FlashPage.PAGE_SIZE, FlashPage.PAGE_SIZE); // emulatae write of new data to ROM
             }
         }
         size += possiblyFinishRawBuffer(rawBuffer, outputDiffStream);
         if (!outputDiffStream.isEmpty()) {
             crc32Block.reset();
             crc32Block.update(img2.getBinData(), img2.getBinData().length - (img2.getBinData().length % FlashPage.PAGE_SIZE), img2.getBinData().length % FlashPage.PAGE_SIZE);
+
+            debug("# FLASH PAGE startAddrOfPageToBeFlashed=%08X", i*FlashPage.PAGE_SIZE);
+            debug("\n  ");
+            for (int k = pages*FlashPage.PAGE_SIZE; (k < (pages+1)*FlashPage.PAGE_SIZE && k < img2.getBinData().length); k++) {
+                debug("%02X ", (img2.getBinData()[k] & 0xff));
+                if (k % 16 == 0) {
+                    debug("\n  ");
+                }
+            }
+            debug("\n");
+
             flashProgrammer.sendCompressedPage(outputDiffStream, crc32Block.getValue());
         }
         //dumpSideBySide(img1, img2);
-        System.out.println("Compressed stream length = " + size);
-        System.out.println(pages);}
+        System.out.println("Compressed (diffed) stream length = " + size);
+        System.out.println(pages);
+    }
+
+    protected void debug(String format, Object... args) {
+    }
 }

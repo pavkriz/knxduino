@@ -20,11 +20,11 @@ class Decompressor
 		};
 
 	private:
-		uint8_t cmdBuffer[5];
+		uint8_t cmdBuffer[5] = {0};
 		int expectedCmdLength = 0;
 		int cmdBufferLength = 0;
-		uint8_t scratchpad[FLASH_PAGE_SIZE];
-		uint8_t oldPages[FLASH_PAGE_SIZE * REMEMBER_OLD_PAGES_COUNT];
+		uint8_t scratchpad[FLASH_PAGE_SIZE] = {0};
+		uint8_t oldPages[FLASH_PAGE_SIZE * REMEMBER_OLD_PAGES_COUNT] = {0};
 		int scratchpadIndex = 0;
 		int rawLength = 0;
 		State state = State::EXPECT_COMMAND_BYTE;
